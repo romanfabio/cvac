@@ -1,13 +1,19 @@
-import type { Diagnostic } from "../diagnostics.ts";
+import type { Diagnostic as Diag, Diagnostic } from "../diagnostics.ts";
 import { isLocalized } from "../model/common.ts";
 import { type Content, Content as ContentSchema, SECTION_TYPES } from "../model/content.ts";
 import { type Theme, Theme as ThemeSchema } from "../model/theme.ts";
-import { type ParseOptions, type ParseResult, parseYamlWith, type SourceDoc } from "./yaml.ts";
+import { type ParseOptions, type ParseResult, parseYamlWith, SourceDoc } from "./yaml.ts";
 
 export type { ParseOptions, ParseResult } from "./yaml.ts";
 
 /** Parse and validate a CV content file (`cv.yaml`). */
 export function parseContent(source: string, opts: ParseOptions = {}): ParseResult<Content> {
+  const r = parseContentInner(source, opts);
+  for (const d of r.diagnostics) d.origin = "content";
+  return r;
+}
+
+function parseContentInner(source: string, opts: ParseOptions): ParseResult<Content> {
   const { result, src } = parseYamlWith(ContentSchema, source, opts);
   improveDiscriminatorMessages(result.diagnostics);
   if (!result.value) return result;
@@ -22,7 +28,33 @@ export function parseContent(source: string, opts: ParseOptions = {}): ParseResu
 
 /** Parse and validate a theme file (`theme.yaml`). */
 export function parseTheme(source: string, opts: ParseOptions = {}): ParseResult<Theme> {
-  return parseYamlWith(ThemeSchema, source, opts).result;
+  const r = parseYamlWith(ThemeSchema, source, opts).result;
+  for (const d of r.diagnostics) d.origin = "theme";
+  return r;
+}
+
+/**
+ * Give source locations to diagnostics produced after parsing (layout,
+ * locale and theme resolution only know document paths). Diagnostics whose
+ * `origin` matches get `file` and a `range` from the source text.
+ */
+export function locateDiagnostics(
+  diagnostics: Diag[],
+  source: string,
+  opts: { origin: "content" | "theme"; file?: string },
+): Diag[] {
+  let src: SourceDoc | undefined;
+  return diagnostics.map((d) => {
+    if (d.origin !== opts.origin || d.range) return d;
+    src ??= new SourceDoc(source, opts.file);
+    const out: Diag = { ...d };
+    if (opts.file !== undefined) out.file = opts.file;
+    const range = d.path
+      ? src.locate(d.path, { key: d.code === "missing-translation" })
+      : undefined;
+    if (range) out.range = range;
+    return out;
+  });
 }
 
 function improveDiscriminatorMessages(diagnostics: Diagnostic[]): void {

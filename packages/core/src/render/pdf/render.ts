@@ -76,6 +76,7 @@ export async function renderPdf(layout: LayoutDocument, opts: PdfOptions): Promi
         diagnostics.push({
           code: "unknown-font",
           severity: "error",
+          origin: "theme",
           message: `Font family '${s.family}' is not available. Available: ${available}`,
         });
       }

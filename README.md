@@ -7,14 +7,35 @@ Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** o
 - **ATS-aware.** Layout is free, and a linter (on by default) warns about choices that hurt HR scanners.
 - **Variants and languages.** Tag items to build tailored variants, and write text as `{ en: ..., it: ... }`.
 
-> Status: early development. Model, parsing, PDF and DOCX rendering with the default theme work (M1–M3). The CLI and the web editor are next.
+> Status: early development. Model, parsing, PDF/DOCX rendering with the default theme and the `cvac` CLI work (M1–M4). The ATS linter, variants and the web editor are next.
 
 ## Packages
 
 | Package                         | Description                                                                                      |
 | ------------------------------- | ------------------------------------------------------------------------------------------------ |
 | [`@cvac/core`](packages/core)   | Model, YAML parsing with located diagnostics, JSON Schemas, i18n, layout, PDF and DOCX renderers |
+| [`@cvac/cli`](packages/cli)     | The `cvac` command line                                                                          |
 | [`@cvac/fonts`](packages/fonts) | Bundled fonts (SIL OFL) and a Node loader                                                        |
+
+## Quick start
+
+```bash
+cvac init                          # starter cv.yaml + theme.yaml + editor schemas
+cvac build                         # -> cv.pdf
+cvac build --format all --lang en,it   # -> cv.en.pdf, cv.en.docx, cv.it.pdf, cv.it.docx
+cvac watch                         # rebuild on every save
+cvac validate --lang en,it         # check without writing files
+```
+
+`build` options:
+- `-t, --theme <file>`: theme file. By default, `theme.yaml` next to the CV is used if it exists.
+- `-o, --out <path>`: output file, or a directory when there are several outputs.
+- `--date <iso>`: date written into the files. `SOURCE_DATE_EPOCH` also works.
+- `--no-embed-fonts`: build a smaller DOCX without the fonts inside.
+
+Exit codes: `0` ok, `1` problems in your files, `2` bad usage.
+
+In this repo, run the CLI from source with `npm run cvac -- build ...`.
 
 ## How it works
 

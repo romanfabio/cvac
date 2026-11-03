@@ -12,12 +12,13 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build --workspaces --if-present",
+    "build": "npm run build -w @cvac/core && npm run build -w @cvac/fonts && npm run build -w @cvac/cli",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "biome check .",
-    "format": "biome check --write ."
+    "format": "biome check --write .",
+    "cvac": "node --conditions=source packages/cli/src/bin.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",

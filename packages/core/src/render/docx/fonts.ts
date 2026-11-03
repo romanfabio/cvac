@@ -1,3 +1,4 @@
+/// <reference path="./fontkit.d.ts" />
 import { create as openFont } from "fontkit";
 import { type FontFace, type FontSet, selectFace } from "../../fonts.ts";
 

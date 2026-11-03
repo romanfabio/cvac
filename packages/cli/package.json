@@ -1,0 +1,22 @@
+{
+  "name": "@cvac/cli",
+  "version": "0.0.0",
+  "description": "CV as Code command line: build deterministic, ATS-friendly PDF and DOCX CVs from YAML.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "cvac": "./dist/bin.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@cvac/core": "0.0.0",
+    "@cvac/fonts": "0.0.0",
+    "commander": "15.0.0"
+  }
+}

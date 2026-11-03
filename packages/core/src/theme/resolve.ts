@@ -89,6 +89,7 @@ export function resolveTheme(theme?: Theme): { theme: ResolvedTheme; diagnostics
       severity: "error",
       message: `Unknown base theme '${theme.extends}'. Available: default`,
       path: ["extends"],
+      origin: "theme",
     });
   }
   const d = defaultTheme;

@@ -25,6 +25,8 @@ export interface Diagnostic {
   range?: Range;
   /** Path into the document, e.g. `["sections", 0, "items", 2, "role"]`. */
   path?: (string | number)[];
+  /** Which input the path refers to. */
+  origin?: "content" | "theme";
 }
 
 export function hasErrors(diagnostics: readonly Diagnostic[]): boolean {

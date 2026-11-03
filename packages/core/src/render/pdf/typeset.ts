@@ -1,3 +1,4 @@
+/// <reference path="./linebreak.d.ts" />
 import { LineBreaker } from "linebreak";
 import type {
   Block,

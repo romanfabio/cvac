@@ -157,3 +157,24 @@ sections:
     expect(layout(c).layout?.blocks).toHaveLength(2);
   });
 });
+
+describe("undeclared locales", () => {
+  const declared = parse(`
+meta: { defaultLocale: en, locales: [en, it] }
+basics:
+  name: Jane
+  email: j@example.com
+  title: { en: Engineer, it: Ingegnere }
+  summary: { en: Hi, it: Ciao }
+`);
+
+  it("warns once when the requested language is not one of the CV's languages", () => {
+    const r = resolveLocale(declared, "de");
+    expect(r.content.basics.title).toBe("Engineer");
+    expect(r.diagnostics).toMatchObject([{ code: "undeclared-locale", severity: "warning" }]);
+  });
+
+  it("accepts regional variants of a declared language", () => {
+    expect(resolveLocale(declared, "it-CH").diagnostics).toEqual([]);
+  });
+});

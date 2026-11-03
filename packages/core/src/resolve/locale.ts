@@ -31,16 +31,36 @@ export function resolveLocale(content: Content, requested?: string): LocaleResol
   const fallback = content.meta?.defaultLocale;
   const diagnostics: Diagnostic[] = [];
 
+  // A language the CV does not claim to be written in: one warning instead
+  // of one per field.
+  const declared = content.meta?.locales;
+  const undeclared =
+    requested !== undefined &&
+    declared !== undefined &&
+    !declared.includes(locale) &&
+    !(base !== undefined && declared.includes(base));
+  if (undeclared) {
+    diagnostics.push({
+      code: "undeclared-locale",
+      severity: "warning",
+      message: `'${locale}' is not one of this CV's languages (${declared.join(", ")}); texts fall back to ${fallback ? `'${fallback}'` : "the first language written"}`,
+      path: ["meta", "locales"],
+      origin: "content",
+    });
+  }
+
   const pick = (v: Localized, path: (string | number)[]): string => {
     const m = v.$l10n;
     const hit = m[locale] ?? (base !== undefined ? m[base] : undefined);
     if (hit !== undefined) return hit;
-    diagnostics.push({
-      code: "missing-translation",
-      severity: "warning",
-      message: `No '${locale}' text, using ${fallback && m[fallback] !== undefined ? `'${fallback}'` : "the first available language"}`,
-      path,
-    });
+    if (!undeclared)
+      diagnostics.push({
+        code: "missing-translation",
+        severity: "warning",
+        message: `No '${locale}' text, using ${fallback && m[fallback] !== undefined ? `'${fallback}'` : "the first available language"}`,
+        path,
+        origin: "content",
+      });
     return (fallback !== undefined ? m[fallback] : undefined) ?? Object.values(m)[0] ?? "";
   };
 
