@@ -1,6 +1,6 @@
 import { mkdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
-import { buildDocx, buildPdf, type Diagnostic, hasErrors, lint } from "@cvac/core";
+import { buildDocx, buildPdf, type Content, type Diagnostic, hasErrors, lint } from "@cvac/core";
 import { loadBundledFonts } from "@cvac/fonts";
 import { displayName, type Inputs, loadInputs, locate } from "../inputs.ts";
 import { dedupe, formatBytes, type Io, printDiagnostics, summarize } from "../report.ts";
@@ -16,6 +16,8 @@ export interface BuildFlags {
   embedFonts?: boolean;
   /** Run the ATS linter (default true). Lint errors block the build. */
   lint?: boolean;
+  /** Variant name(s) or tag(s), comma-separated, or `all` named variants. */
+  variant?: string;
 }
 
 export class UsageError extends Error {}
@@ -63,42 +65,68 @@ export function parseDate(flag: string | undefined, env = process.env): Date | u
   return undefined;
 }
 
+/**
+ * `--variant`: comma-separated names, or `all` for every variant defined in
+ * `meta.variants`. Without the flag the full CV is built.
+ */
+export function parseVariants(
+  value: string | undefined,
+  content: Content,
+): { variants: (string | undefined)[]; diagnostics: Diagnostic[] } {
+  if (!value) return { variants: [undefined], diagnostics: [] };
+  if (value === "all") {
+    const names = Object.keys(content.meta?.variants ?? {});
+    if (!names.length) {
+      return {
+        variants: [],
+        diagnostics: [
+          {
+            code: "no-variants",
+            severity: "error",
+            message: "--variant all, but the CV defines no variants",
+            help: "Add meta.variants to cv.yaml, or pass a tag: --variant backend",
+          },
+        ],
+      };
+    }
+    return { variants: names, diagnostics: [] };
+  }
+  return { variants: parseLangs(value), diagnostics: [] };
+}
+
 export interface Target {
   format: Format;
   lang: string | undefined;
+  variant: string | undefined;
   path: string;
 }
 
 /**
- * Output paths. Default: next to the CV, `<name>[.<lang>].<ext>` (the
- * language suffix appears whenever --lang is given). `-o` is a file when
- * there is exactly one output, otherwise a directory.
+ * Output paths. Default: next to the CV, `<name>[.<variant>][.<lang>].<ext>`
+ * (each suffix appears whenever its flag is given). `-o` is a file when there
+ * is exactly one output, otherwise a directory.
  */
 export function planTargets(
   cvPath: string,
   formats: Format[],
   langs: (string | undefined)[],
   out?: string,
+  variants: (string | undefined)[] = [undefined],
 ): Target[] {
   const stem = basename(cvPath, extname(cvPath));
-  const combos = langs.flatMap((lang) => formats.map((format) => ({ lang, format })));
-  const name = (lang: string | undefined, format: Format) =>
-    `${stem}${lang ? `.${lang}` : ""}.${format}`;
+  const combos = variants.flatMap((variant) =>
+    langs.flatMap((lang) => formats.map((format) => ({ variant, lang, format }))),
+  );
+  const name = (c: (typeof combos)[number]) =>
+    [stem, c.variant, c.lang, c.format].filter(Boolean).join(".");
   if (out !== undefined) {
     const abs = resolve(out);
-    const isDir = /[\\/]$/.test(out) || isDirectory(abs) || combos.length > 1;
-    if (!isDir) {
-      const only = combos[0] as { lang: string | undefined; format: Format };
-      return [{ ...only, path: abs }];
-    }
-    return combos.map(({ lang, format }) => ({
-      lang,
-      format,
-      path: join(abs, name(lang, format)),
-    }));
+    const isDir = /[\/]$/.test(out) || isDirectory(abs) || combos.length > 1;
+    if (!isDir) return [{ ...(combos[0] as (typeof combos)[number]), path: abs }];
+    return combos.map((c) => ({ ...c, path: join(abs, name(c)) }));
   }
   const dir = dirname(cvPath);
-  return combos.map(({ lang, format }) => ({ lang, format, path: join(dir, name(lang, format)) }));
+  return combos.map((c) => ({ ...c, path: join(dir, name(c)) }));
 }
 
 function isDirectory(p: string): boolean {
@@ -132,9 +160,12 @@ export async function build(cv: string | undefined, flags: BuildFlags): Promise<
     inputs,
   };
   if (!inputs.content || hasErrors(inputs.diagnostics)) return outcome;
+  const { variants, diagnostics: variantDiags } = parseVariants(flags.variant, inputs.content);
+  outcome.diagnostics.push(...variantDiags);
+  if (hasErrors(variantDiags)) return outcome;
 
   const fonts = loadBundledFonts();
-  const targets = planTargets(inputs.cvPath, formats, langs, flags.out);
+  const targets = planTargets(inputs.cvPath, formats, langs, flags.out, variants);
   const common = {
     ...(inputs.theme ? { theme: inputs.theme } : {}),
     ...(date ? { date } : {}),
@@ -143,9 +174,15 @@ export async function build(cv: string | undefined, flags: BuildFlags): Promise<
 
   let failed = false;
   const built: { target: Target; bytes: Uint8Array; pages?: number }[] = [];
-  const pagesByLang = new Map<string | undefined, number>();
+  const pagesOf = new Map<string, number>();
+  const comboKey = (variant: string | undefined, lang: string | undefined) =>
+    `${variant ?? ""}|${lang ?? ""}`;
   for (const t of targets) {
-    const opts = { ...common, ...(t.lang ? { locale: t.lang } : {}) };
+    const opts = {
+      ...common,
+      ...(t.lang ? { locale: t.lang } : {}),
+      ...(t.variant ? { variant: t.variant } : {}),
+    };
     const r =
       t.format === "pdf"
         ? await buildPdf(inputs.content, opts)
@@ -157,21 +194,24 @@ export async function build(cv: string | undefined, flags: BuildFlags): Promise<
       continue;
     }
     const pages = "pages" in r ? r.pages : undefined;
-    if (pages) pagesByLang.set(t.lang, pages);
+    if (pages) pagesOf.set(comboKey(t.variant, t.lang), pages);
     built.push({ target: t, bytes, ...(pages ? { pages } : {}) });
   }
 
   if (flags.lint !== false) {
-    for (const lang of langs) {
-      const pages = pagesByLang.get(lang);
-      outcome.diagnostics.push(
-        ...lint(inputs.content, {
-          fonts,
-          ...(inputs.theme ? { theme: inputs.theme } : {}),
-          ...(lang ? { locale: lang } : {}),
-          ...(pages ? { pages } : {}),
-        }),
-      );
+    for (const variant of variants) {
+      for (const lang of langs) {
+        const pages = pagesOf.get(comboKey(variant, lang));
+        outcome.diagnostics.push(
+          ...lint(inputs.content, {
+            fonts,
+            ...(inputs.theme ? { theme: inputs.theme } : {}),
+            ...(lang ? { locale: lang } : {}),
+            ...(variant ? { variant } : {}),
+            ...(pages ? { pages } : {}),
+          }),
+        );
+      }
     }
   }
   if (hasErrors(outcome.diagnostics)) failed = true;

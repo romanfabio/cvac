@@ -5,9 +5,9 @@ Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** o
 - **Content and theme are separate.** `cv.yaml` holds what you did, and `theme.yaml` holds how it looks.
 - **Deterministic.** The same input and the same cvac version produce byte-identical files.
 - **ATS-aware.** Layout is free, and a linter (on by default) warns about choices that hurt HR scanners.
-- **Variants and languages.** Tag items to build tailored variants, and write text as `{ en: ..., it: ... }`.
+- **Variants and languages.** Tag sections, items or bullets to build tailored variants. Write text as `{ en: ..., it: ... }`.
 
-> Status: early development. Model, parsing, PDF/DOCX rendering, the `cvac` CLI and the ATS linter work (M1–M5). Variants, advanced themes and the web editor are next.
+> Status: early development. Model, parsing, PDF/DOCX rendering, the `cvac` CLI, the ATS linter and variants work (M1–M6). Advanced themes and the web editor are next.
 
 ## Packages
 
@@ -23,6 +23,7 @@ Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** o
 cvac init                          # starter cv.yaml + theme.yaml + editor schemas
 cvac build                         # -> cv.pdf
 cvac build --format all --lang en,it   # -> cv.en.pdf, cv.en.docx, cv.it.pdf, cv.it.docx
+cvac build --variant all           # one file per variant: cv.backend.pdf, cv.lead.pdf
 cvac watch                         # rebuild on every save
 cvac validate --lang en,it         # check without writing files
 cvac lint --lang en,it --strict    # validation + ATS linter, fail on warnings (CI)
@@ -38,6 +39,42 @@ cvac lint --lang en,it --strict    # validation + ATS linter, fail on warnings (
 Exit codes: `0` ok, `1` problems in your files, `2` bad usage.
 
 In this repo, run the CLI from source with `npm run cvac -- build ...`.
+
+## Variants
+
+You can keep one CV and build versions tailored to different roles:
+
+```yaml
+meta:
+  variants:
+    backend:
+      tags: [backend] # keep items tagged backend, plus every untagged item
+      title: Senior Backend Engineer # replaces basics.title in this variant
+    lead:
+      tags: [lead]
+      exclude: [hands-on] # drop anything tagged hands-on
+      sections: [skills, experience, education] # pick sections and their order
+      summary: Engineering leader who grows teams.
+
+sections:
+  - type: experience
+    items:
+      - company: Acme
+        role: Engineering Manager
+        tags: [lead]
+        highlights:
+          - Grew the team from 3 to 9 engineers
+          - { text: Rewrote billing in Go, tags: [backend, hands-on] }
+```
+
+Commands:
+- `cvac build --variant backend` builds `cv.backend.pdf`.
+- `--variant backend,lead` builds both, and `--variant all` builds every named variant.
+- A bare tag works as an ad-hoc variant: `--variant hands-on`.
+- `cvac variants` lists the variants and every tag in use.
+
+Section ids default to the section type. Lint findings and warnings for a
+variant point at the matching line in your file.
 
 ## ATS linter
 

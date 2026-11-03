@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=../../packages/core/schemas/cv.schema.json
+# One CV, several tailored variants: cvac build --variant all
+meta:
+  defaultLocale: en
+  locales: [en, it]
+  variants:
+    backend:
+      description: Backend roles
+      tags: [backend]
+      title: { en: Senior Backend Engineer, it: Ingegnere Backend Senior }
+    lead:
+      description: Engineering manager roles
+      tags: [lead]
+      exclude: [hands-on]
+      sections: [summary-skills, experience, education]
+      summary: Engineering leader who grows teams and ships reliable platforms.
+
+basics:
+  name: Jane Doe
+  title: Software Engineer
+  email: jane@example.com
+  phone: "+39 333 000 0000"
+  summary: Engineer with 10 years of experience in distributed systems.
+
+sections:
+  - type: experience
+    items:
+      - company: Acme Corp
+        role: Engineering Manager
+        start: 2022-01
+        end: present
+        tags: [lead]
+        highlights:
+          - Grew the platform team from 3 to 9 engineers
+          - text: Rewrote the billing service in Go
+            tags: [backend, hands-on]
+      - company: Globex
+        role: Senior Backend Engineer
+        start: 2017-03
+        end: 2021-12
+        tags: [backend]
+        highlights:
+          - text: Designed an event-driven pipeline processing 2M events/day
+            tags: [backend]
+          - text: Mentored four junior engineers
+            tags: [lead]
+          - On-call for the payments platform
+      - company: Initech
+        role: Developer
+        start: 2014
+        end: 2017-02
+        highlights: [Built internal tooling in Python]
+
+  - type: skills
+    id: summary-skills
+    items:
+      - name: Backend
+        keywords: [Go, PostgreSQL, Kafka]
+        tags: [backend]
+      - name: Leadership
+        keywords: [Hiring, Coaching, Roadmapping]
+        tags: [lead]
+      - name: Cloud
+        keywords: [Azure, Kubernetes]
+
+  - type: education
+    items:
+      - { institution: Politecnico di Milano, degree: MSc Computer Engineering, end: 2014 }

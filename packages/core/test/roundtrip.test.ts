@@ -12,23 +12,29 @@ import { buildDocx, buildPdf, layout, parseContent } from "../src/index.ts";
  */
 
 const FIXTURES = join(import.meta.dirname, "..", "..", "..", "fixtures");
+/** [fixture[:variant], locale] */
 const CASES: [string, string][] = [
   ["basic", "en"],
   ["basic", "it"],
   ["long", "en"],
+  ["variants:backend", "en"],
+  ["variants:lead", "it"],
 ];
 const fonts = loadBundledFonts();
 const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 
 function load(name: string) {
-  const r = parseContent(readFileSync(join(FIXTURES, name, "cv.yaml"), "utf8"));
+  const r = parseContent(
+    readFileSync(join(FIXTURES, name.split(":")[0] as string, "cv.yaml"), "utf8"),
+  );
   if (!r.value) throw new Error(JSON.stringify(r.diagnostics));
   return r.value;
 }
 
 /** Text runs in reading order (runs, then the right-aligned aside). */
 function expectedRuns(name: string, locale: string): string[] {
-  const l = layout(load(name), { locale }).layout;
+  const variant = name.split(":")[1];
+  const l = layout(load(name), { locale, ...(variant ? { variant } : {}) }).layout;
   if (!l) throw new Error("layout failed");
   return l.blocks
     .flatMap((b) => (b.kind === "group" ? b.blocks : [b]))
@@ -82,11 +88,13 @@ describe("text round-trip", () => {
       const runs = expectedRuns(name, locale);
       expect(runs.length).toBeGreaterThan(10);
       const content = load(name);
+      const variant = name.split(":")[1];
+      const opts = { fonts, locale, ...(variant ? { variant } : {}) };
 
-      const pdf = await buildPdf(content, { fonts, locale });
+      const pdf = await buildPdf(content, opts);
       expectInOrder(await pdfText(pdf.pdf as Uint8Array), runs, `${name}.${locale}.pdf`);
 
-      const docx = await buildDocx(content, { fonts, locale });
+      const docx = await buildDocx(content, opts);
       expectInOrder(docxText(docx.docx as Uint8Array), runs, `${name}.${locale}.docx`);
     });
   }

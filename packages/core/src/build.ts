@@ -7,9 +7,12 @@ import type { Theme } from "./model/theme.ts";
 import { renderDocx } from "./render/docx/render.ts";
 import { renderPdf } from "./render/pdf/render.ts";
 import { resolveLocale } from "./resolve/locale.ts";
+import { mapDiagnostics, resolveVariant } from "./resolve/variant.ts";
 import { resolveTheme } from "./theme/resolve.ts";
 
 export interface LayoutOptions {
+  /** Named variant from `meta.variants`, or a tag to filter by. */
+  variant?: string;
   /** Output language. Defaults to `meta.defaultLocale`, then `en`. */
   locale?: string;
   /** User theme layered over the built-in default theme. */
@@ -23,9 +26,11 @@ export interface LayoutResult {
 
 /** Content + theme -> renderer-independent layout document. */
 export function layout(content: Content, opts: LayoutOptions = {}): LayoutResult {
-  const loc = resolveLocale(content, opts.locale);
+  const v = resolveVariant(content, opts.variant);
+  if (hasErrors(v.diagnostics)) return { diagnostics: v.diagnostics };
+  const loc = resolveLocale(v.content, opts.locale);
   const th = resolveTheme(opts.theme);
-  const diagnostics = [...th.diagnostics, ...loc.diagnostics];
+  const diagnostics = [...th.diagnostics, ...mapDiagnostics(loc.diagnostics, v)];
   if (hasErrors(diagnostics)) return { diagnostics };
   return { layout: buildLayout(loc.content, th.theme, loc.locale), diagnostics };
 }

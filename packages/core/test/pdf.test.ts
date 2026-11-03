@@ -11,15 +11,27 @@ const GOLDEN_FILE = join(FIXTURES, "golden-pdf.json");
 const UPDATE = process.env.UPDATE_GOLDEN === "1";
 
 /** fixture name -> locales to build */
-const CASES: Record<string, string[]> = { basic: ["en", "it"], long: ["en"] };
+/** fixture[:variant] -> locales to build */
+const CASES: Record<string, string[]> = {
+  basic: ["en", "it"],
+  long: ["en"],
+  "variants:backend": ["en"],
+  "variants:lead": ["it"],
+};
 
 const fonts = loadBundledFonts();
 const sha256 = (b: Uint8Array) => createHash("sha256").update(b).digest("hex");
 
 async function build(name: string, locale: string, date?: Date) {
-  const parsed = parseContent(readFileSync(join(FIXTURES, name, "cv.yaml"), "utf8"));
+  const [fixture, variant] = name.split(":") as [string, string | undefined];
+  const parsed = parseContent(readFileSync(join(FIXTURES, fixture, "cv.yaml"), "utf8"));
   if (!parsed.value) throw new Error(JSON.stringify(parsed.diagnostics));
-  const r = await buildPdf(parsed.value, { fonts, locale, ...(date ? { date } : {}) });
+  const r = await buildPdf(parsed.value, {
+    fonts,
+    locale,
+    ...(variant ? { variant } : {}),
+    ...(date ? { date } : {}),
+  });
   if (!r.pdf) throw new Error(JSON.stringify(r.diagnostics));
   return { ...r, pdf: r.pdf };
 }
@@ -48,7 +60,7 @@ describe("PDF determinism (golden hashes)", () => {
 
   for (const [name, locales] of Object.entries(CASES)) {
     for (const locale of locales) {
-      const key = `${name}.${locale}.pdf`;
+      const key = `${name.replace(":", ".")}.${locale}.pdf`;
       it(`${key} is byte-identical across builds and matches the golden hash`, async () => {
         const a = await build(name, locale);
         const b = await build(name, locale);

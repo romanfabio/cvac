@@ -14,12 +14,16 @@ const UPDATE = process.env.UPDATE_GOLDEN === "1";
 const fonts = loadBundledFonts();
 const sha256 = (b: Uint8Array) => createHash("sha256").update(b).digest("hex");
 
-async function build(name: string, opts: { locale?: string; embed?: boolean; date?: Date } = {}) {
+async function build(
+  name: string,
+  opts: { locale?: string; embed?: boolean; date?: Date; variant?: string } = {},
+) {
   const parsed = parseContent(readFileSync(join(FIXTURES, name, "cv.yaml"), "utf8"));
   if (!parsed.value) throw new Error(JSON.stringify(parsed.diagnostics));
   const r = await buildDocx(parsed.value, {
     fonts,
     locale: opts.locale ?? "en",
+    ...(opts.variant ? { variant: opts.variant } : {}),
     ...(opts.embed !== undefined ? { embedFonts: opts.embed } : {}),
     ...(opts.date ? { date: opts.date } : {}),
   });
@@ -61,6 +65,7 @@ describe("DOCX determinism (golden hashes)", () => {
     ["basic.en.docx", "basic", { locale: "en" }],
     ["basic.it.docx", "basic", { locale: "it" }],
     ["long.en.docx", "long", { locale: "en" }],
+    ["variants.backend.en.docx", "variants", { locale: "en", variant: "backend" }],
     ["basic.en.no-embed.docx", "basic", { locale: "en", embed: false }],
   ];
 

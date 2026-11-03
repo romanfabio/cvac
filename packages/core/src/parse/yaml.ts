@@ -190,6 +190,20 @@ function issueToDiagnostics(src: SourceDoc, issue: z.core.$ZodIssue): Diagnostic
         ];
       }
       return [unionDiagnostic(src, issue, path, where)];
+    case "invalid_key":
+      // e.g. a record key that fails its pattern (variant names): report the
+      // key rule, not the generic "Invalid key in record".
+      return [
+        src.diag(
+          {
+            code: "invalid-key",
+            severity: "error",
+            message: `${issue.issues[0]?.message ?? issue.message}${where}`,
+            path,
+          },
+          { key: true },
+        ),
+      ];
     default:
       return [
         src.diag({
@@ -213,10 +227,7 @@ function unionDiagnostic(
   where: string,
 ): Diagnostic {
   const input = issue.input;
-  const badKey = issue.errors
-    .flat()
-    .find((e) => e.code === "invalid_key")
-    ?.path.find((p): p is string => typeof p === "string");
+  const badKey = findInvalidKey(issue.errors);
   if (
     badKey !== undefined &&
     input !== null &&
@@ -251,6 +262,21 @@ function unionDiagnostic(
     message: `${specific[0] ?? issue.message}${where}`,
     path,
   });
+}
+
+/** First record key rejected anywhere inside (possibly nested) union errors. */
+function findInvalidKey(errors: z.core.$ZodIssue[][]): string | undefined {
+  for (const e of errors.flat()) {
+    if (e.code === "invalid_key") {
+      const k = e.path.find((p): p is string => typeof p === "string");
+      if (k !== undefined) return k;
+    }
+    if (e.code === "invalid_union") {
+      const k = findInvalidKey(e.errors);
+      if (k !== undefined) return k;
+    }
+  }
+  return undefined;
 }
 
 function describe(v: unknown): string {

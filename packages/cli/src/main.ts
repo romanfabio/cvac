@@ -4,6 +4,7 @@ import { runBuild, UsageError } from "./commands/build.ts";
 import { runInit, runSchema } from "./commands/init.ts";
 import { runLint } from "./commands/lint.ts";
 import { runValidate } from "./commands/validate.ts";
+import { runVariants } from "./commands/variants.ts";
 import { startWatch } from "./commands/watch.ts";
 import { type Io, processIo } from "./report.ts";
 
@@ -38,6 +39,10 @@ export function createProgram(
         "document date written into the files (default: SOURCE_DATE_EPOCH or 2000-01-01)",
       )
       .addOption(new Option("--no-embed-fonts", "DOCX: do not embed fonts (smaller file)"))
+      .option(
+        "-v, --variant <names>",
+        "variant(s) or tag(s), e.g. backend or backend,lead; 'all' builds every named variant",
+      )
       .addOption(new Option("--no-lint", "skip the ATS linter"));
 
   buildOptions(program.command("build"))
@@ -58,6 +63,7 @@ export function createProgram(
     .argument("[cv]", "CV file", "cv.yaml")
     .option("-t, --theme <file>", "theme file (default: theme.yaml next to the CV, if any)")
     .option("-l, --lang <locales>", "also check translations for these languages")
+    .option("-v, --variant <names>", "check these variants (or 'all')")
     .action(async (cv: string, flags) => {
       setCode(await runValidate(cv, flags, io));
     });
@@ -68,10 +74,19 @@ export function createProgram(
     .argument("[cv]", "CV file", "cv.yaml")
     .option("-t, --theme <file>", "theme file (default: theme.yaml next to the CV, if any)")
     .option("-l, --lang <locales>", "language(s) to check, e.g. en,it")
+    .option("-v, --variant <names>", "lint these variants (or 'all')")
     .option("--strict", "fail on warnings too (useful in CI)")
     .option("--list", "list the rules and their default levels")
     .action(async (cv: string, flags) => {
       setCode(await runLint(cv, flags, io));
+    });
+
+  program
+    .command("variants")
+    .description("list named variants and the tags in use")
+    .argument("[cv]", "CV file", "cv.yaml")
+    .action((cv: string) => {
+      setCode(runVariants(cv, io));
     });
 
   program

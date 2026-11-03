@@ -4,12 +4,15 @@ import type { Content } from "../model/content.ts";
 import { LINT_RULE_IDS, type LintRuleId } from "../model/lint.ts";
 import type { Theme } from "../model/theme.ts";
 import { resolveLocale } from "../resolve/locale.ts";
+import { mapDiagnostics, resolveVariant } from "../resolve/variant.ts";
 import { resolveTheme } from "../theme/resolve.ts";
 import { RULES, type Rule } from "./rules.ts";
 
 export { contrast } from "./rules.ts";
 
 export interface LintOptions {
+  /** Lint this variant (see `resolveVariant`). */
+  variant?: string;
   theme?: Theme;
   /** Language to check (text-based rules look at that language's text). */
   locale?: string;
@@ -37,9 +40,11 @@ export function lintRules(): RuleInfo[] {
  */
 export function lint(content: Content, opts: LintOptions = {}): Diagnostic[] {
   const config = content.meta?.lint ?? {};
+  const v = resolveVariant(content, opts.variant);
+  if (v.diagnostics.length) return v.diagnostics;
   const ctx = {
-    content,
-    resolved: resolveLocale(content, opts.locale).content,
+    content: v.content,
+    resolved: resolveLocale(v.content, opts.locale).content,
     theme: opts.theme,
     resolvedTheme: resolveTheme(opts.theme).theme,
     fonts: opts.fonts,
@@ -51,7 +56,7 @@ export function lint(content: Content, opts: LintOptions = {}): Diagnostic[] {
     if (level === "off") continue;
     for (const f of rule.check(ctx)) out.push({ ...f, code: `lint/${rule.id}`, severity: level });
   }
-  return out;
+  return mapDiagnostics(out, v);
 }
 
 // Keep the rule list and the schema's id list in sync (checked at load).

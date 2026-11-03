@@ -2,6 +2,7 @@ import type { Diagnostic as Diag, Diagnostic } from "../diagnostics.ts";
 import { isLocalized } from "../model/common.ts";
 import { type Content, Content as ContentSchema, SECTION_TYPES } from "../model/content.ts";
 import { type Theme, Theme as ThemeSchema } from "../model/theme.ts";
+import { usedTags } from "../resolve/variant.ts";
 import { type ParseOptions, type ParseResult, parseYamlWith, SourceDoc } from "./yaml.ts";
 
 export type { ParseOptions, ParseResult } from "./yaml.ts";
@@ -102,6 +103,42 @@ function checkContent(content: Content, src: SourceDoc): Diagnostic[] {
       seen.set(id, i);
     }
   });
+
+  // Named variants: referenced sections must exist; unused tags are typos.
+  const ids = new Set(content.sections.map((s) => s.id ?? s.type));
+  const tags = usedTags(content);
+  for (const [name, v] of Object.entries(content.meta?.variants ?? {})) {
+    v.sections?.forEach((id, i) => {
+      if (!ids.has(id)) {
+        out.push(
+          src.diag({
+            code: "unknown-section",
+            severity: "error",
+            message: `Variant '${name}' lists section '${id}', but there is no such section`,
+            help: `Section ids: ${[...ids].join(", ") || "none"} (a section's id defaults to its type)`,
+            path: ["meta", "variants", name, "sections", i],
+          }),
+        );
+      }
+    });
+    for (const field of ["tags", "exclude"] as const) {
+      v[field]?.forEach((t, i) => {
+        if (!tags.has(t)) {
+          out.push(
+            src.diag({
+              code: "unused-tag",
+              severity: "warning",
+              message: `Variant '${name}' uses tag '${t}', but no section, item or bullet has it`,
+              help: tags.size
+                ? `Tags in use: ${[...tags].sort().join(", ")}`
+                : "Add tags: [...] to the items this variant should keep",
+              path: ["meta", "variants", name, field, i],
+            }),
+          );
+        }
+      });
+    }
+  }
 
   const declared = content.meta?.locales;
   if (declared) {

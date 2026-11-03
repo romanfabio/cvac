@@ -45,7 +45,16 @@ const dated = {
   end: EndDate.optional(),
 };
 
-const Highlights = z.array(LocalizedText);
+/**
+ * A bullet point: plain (localized) text, or `{ text, tags }` so a bullet
+ * appears only in matching variants.
+ */
+export const Highlight = z.union([
+  LocalizedText,
+  z.strictObject({ text: LocalizedText, tags: Tags.optional() }),
+]);
+export type Highlight = z.output<typeof Highlight>;
+const Highlights = z.array(Highlight);
 
 export const ExperienceItem = z.strictObject({
   ...itemBase,
@@ -168,10 +177,37 @@ export const SECTION_TYPES = [
 // Document
 // ---------------------------------------------------------------------------
 
+/** Variant names end up in file names (`cv.backend.pdf`). */
+export const VariantName = z
+  .string()
+  .regex(
+    /^[a-z0-9][a-z0-9-]*$/,
+    "Variant names are lowercase letters, digits and dashes, e.g. 'backend'",
+  );
+
+export const Variant = z.strictObject({
+  description: z.string().optional(),
+  tags: Tags.optional().describe(
+    "Keep tagged items that have any of these tags. Untagged items are always kept. Omit to keep all.",
+  ),
+  exclude: Tags.optional().describe("Drop items that have any of these tags"),
+  sections: z
+    .array(z.string().min(1))
+    .optional()
+    .describe("Section ids to include, in this order (default: all, in file order)"),
+  title: LocalizedText.optional().describe("Replaces basics.title in this variant"),
+  summary: LocalizedText.optional().describe("Replaces basics.summary in this variant"),
+});
+export type Variant = z.output<typeof Variant>;
+
 export const ContentMeta = z.strictObject({
   defaultLocale: LocaleCode.optional().describe("Locale used when --lang is not given"),
   locales: z.array(LocaleCode).optional().describe("Locales this CV is written in"),
   lint: LintConfig.optional(),
+  variants: z
+    .record(VariantName, Variant)
+    .optional()
+    .describe("Named variants built with `cvac build --variant <name>`"),
 });
 
 export const Content = z.strictObject({

@@ -2,13 +2,14 @@ import { buildPdf, type Diagnostic, hasErrors, lint, lintRules } from "@cvac/cor
 import { loadBundledFonts } from "@cvac/fonts";
 import { loadInputs, locate } from "../inputs.ts";
 import { dedupe, type Io, printDiagnostics, summarize } from "../report.ts";
-import { parseLangs } from "./build.ts";
+import { parseLangs, parseVariants } from "./build.ts";
 
 export interface LintFlags {
   theme?: string;
   lang?: string;
   /** Treat warnings as errors (for CI). */
   strict?: boolean;
+  variant?: string;
   list?: boolean;
 }
 
@@ -23,17 +24,22 @@ export async function runLint(cv: string | undefined, flags: LintFlags, io: Io):
   let diags: Diagnostic[] = [...inputs.diagnostics];
   if (inputs.content && !hasErrors(diags)) {
     const fonts = loadBundledFonts();
-    for (const lang of parseLangs(flags.lang)) {
-      const common = {
-        fonts,
-        ...(inputs.theme ? { theme: inputs.theme } : {}),
-        ...(lang ? { locale: lang } : {}),
-      };
-      const pdf = await buildPdf(inputs.content, common);
-      diags.push(...pdf.diagnostics);
-      diags.push(
-        ...lint(inputs.content, { ...common, ...(pdf.pages ? { pages: pdf.pages } : {}) }),
-      );
+    const { variants, diagnostics: vd } = parseVariants(flags.variant, inputs.content);
+    diags.push(...vd);
+    for (const variant of variants) {
+      for (const lang of parseLangs(flags.lang)) {
+        const common = {
+          fonts,
+          ...(inputs.theme ? { theme: inputs.theme } : {}),
+          ...(lang ? { locale: lang } : {}),
+          ...(variant ? { variant } : {}),
+        };
+        const pdf = await buildPdf(inputs.content, common);
+        diags.push(...pdf.diagnostics);
+        diags.push(
+          ...lint(inputs.content, { ...common, ...(pdf.pages ? { pages: pdf.pages } : {}) }),
+        );
+      }
     }
     diags = dedupe(locate(diags, inputs));
   }

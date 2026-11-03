@@ -322,3 +322,62 @@ describe("cvac lint", () => {
     expect(existsSync("cv.pdf")).toBe(true);
   });
 });
+
+describe("variants", () => {
+  const FIXTURE = join(import.meta.dirname, "..", "..", "..", "fixtures", "variants", "cv.yaml");
+  beforeEach(() => {
+    writeFileSync("cv.yaml", readFileSync(FIXTURE, "utf8"));
+  });
+
+  it("builds one variant, with the variant in the file name", async () => {
+    const r = await run("build", "--variant", "backend", "--lang", "it", "-f", "all");
+    expect(r.code, r.text()).toBe(0);
+    expect(existsSync("cv.backend.it.pdf") && existsSync("cv.backend.it.docx")).toBe(true);
+  });
+
+  it("builds every named variant with --variant all", async () => {
+    const r = await run("build", "--variant", "all");
+    expect(r.code, r.text()).toBe(0);
+    expect(r.out.map((l) => l.split(" ")[1])).toEqual(["cv.backend.pdf", "cv.lead.pdf"]);
+  });
+
+  it("variants differ from each other and from the full CV", async () => {
+    await run("build", "--variant", "backend,lead");
+    await run("build");
+    expect(new Set([sha("cv.pdf"), sha("cv.backend.pdf"), sha("cv.lead.pdf")]).size).toBe(3);
+  });
+
+  it("explains unknown variants with the available names", async () => {
+    const r = await run("build", "--variant", "backnd");
+    expect(r.code).toBe(1);
+    expect(r.text()).toContain("error[unknown-variant]: No variant or tag named 'backnd'");
+    expect(r.text()).toContain("= help: Variants: backend, lead. Tags: backend, hands-on, lead.");
+  });
+
+  it("--variant all needs named variants", async () => {
+    writeFileSync("cv.yaml", "basics: { name: J, email: j@example.com }\n");
+    const r = await run("build", "--variant", "all");
+    expect(r.code).toBe(1);
+    expect(r.text()).toContain("error[no-variants]");
+  });
+
+  it("lint and validate check each variant, locating findings in the original file", async () => {
+    // Remove Initech's start date: it is part of both variants.
+    writeFileSync("cv.yaml", readFileSync("cv.yaml", "utf8").replace("        start: 2014\n", ""));
+    const r = await run("lint", "--variant", "all");
+    expect(r.code).toBe(0);
+    const warnings = r.err.filter((l) => l.startsWith("warning[lint/missing-dates]"));
+    expect(warnings).toHaveLength(1); // same finding in both variants, printed once
+    const at = r.err[r.err.indexOf(warnings[0] as string) + 1];
+    const line = Number(/cv\.yaml:(\d+):/.exec(at ?? "")?.[1]);
+    expect(readFileSync("cv.yaml", "utf8").split("\n")[line - 1]).toContain("company: Initech");
+    expect((await run("validate", "--variant", "all")).code).toBe(0);
+  });
+
+  it("lists variants and tags", async () => {
+    const r = await run("variants");
+    expect(r.code).toBe(0);
+    expect(r.out).toContain("  backend  Backend roles  ·  tags: backend");
+    expect(r.out).toContain("  hands-on (1)");
+  });
+});

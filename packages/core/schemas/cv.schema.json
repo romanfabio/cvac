@@ -167,6 +167,83 @@
           },
           "additionalProperties": false,
           "description": "ATS linter rule levels: off, info, warning or error. Run `cvac lint --list` for the rules."
+        },
+        "variants": {
+          "description": "Named variants built with `cvac build --variant <name>`",
+          "type": "object",
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "description": {
+                "type": "string"
+              },
+              "tags": {
+                "description": "Keep tagged items that have any of these tags. Untagged items are always kept. Omit to keep all.",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "exclude": {
+                "description": "Drop items that have any of these tags",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "sections": {
+                "description": "Section ids to include, in this order (default: all, in file order)",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "title": {
+                "description": "Replaces basics.title in this variant",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              },
+              "summary": {
+                "description": "Replaces basics.summary in this variant",
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "object",
+                    "propertyNames": {
+                      "type": "string",
+                      "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                    },
+                    "additionalProperties": {
+                      "type": "string"
+                    }
+                  }
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
         }
       },
       "additionalProperties": false
@@ -505,17 +582,55 @@
                       "items": {
                         "anyOf": [
                           {
-                            "type": "string"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "object",
+                                "propertyNames": {
+                                  "type": "string",
+                                  "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                                },
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              }
+                            ]
                           },
                           {
                             "type": "object",
-                            "propertyNames": {
-                              "type": "string",
-                              "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                            "properties": {
+                              "text": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "propertyNames": {
+                                      "type": "string",
+                                      "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                                    },
+                                    "additionalProperties": {
+                                      "type": "string"
+                                    }
+                                  }
+                                ]
+                              },
+                              "tags": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "description": "Variant tags, e.g. [backend, lead]"
+                              }
                             },
-                            "additionalProperties": {
-                              "type": "string"
-                            }
+                            "required": [
+                              "text"
+                            ],
+                            "additionalProperties": false
                           }
                         ]
                       }
@@ -698,17 +813,55 @@
                       "items": {
                         "anyOf": [
                           {
-                            "type": "string"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "object",
+                                "propertyNames": {
+                                  "type": "string",
+                                  "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                                },
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              }
+                            ]
                           },
                           {
                             "type": "object",
-                            "propertyNames": {
-                              "type": "string",
-                              "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                            "properties": {
+                              "text": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "propertyNames": {
+                                      "type": "string",
+                                      "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                                    },
+                                    "additionalProperties": {
+                                      "type": "string"
+                                    }
+                                  }
+                                ]
+                              },
+                              "tags": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "description": "Variant tags, e.g. [backend, lead]"
+                              }
                             },
-                            "additionalProperties": {
-                              "type": "string"
-                            }
+                            "required": [
+                              "text"
+                            ],
+                            "additionalProperties": false
                           }
                         ]
                       }
@@ -1072,17 +1225,55 @@
                       "items": {
                         "anyOf": [
                           {
-                            "type": "string"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "object",
+                                "propertyNames": {
+                                  "type": "string",
+                                  "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                                },
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              }
+                            ]
                           },
                           {
                             "type": "object",
-                            "propertyNames": {
-                              "type": "string",
-                              "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                            "properties": {
+                              "text": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "propertyNames": {
+                                      "type": "string",
+                                      "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                                    },
+                                    "additionalProperties": {
+                                      "type": "string"
+                                    }
+                                  }
+                                ]
+                              },
+                              "tags": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "description": "Variant tags, e.g. [backend, lead]"
+                              }
                             },
-                            "additionalProperties": {
-                              "type": "string"
-                            }
+                            "required": [
+                              "text"
+                            ],
+                            "additionalProperties": false
                           }
                         ]
                       }
@@ -1391,17 +1582,55 @@
                       "items": {
                         "anyOf": [
                           {
-                            "type": "string"
+                            "anyOf": [
+                              {
+                                "type": "string"
+                              },
+                              {
+                                "type": "object",
+                                "propertyNames": {
+                                  "type": "string",
+                                  "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                                },
+                                "additionalProperties": {
+                                  "type": "string"
+                                }
+                              }
+                            ]
                           },
                           {
                             "type": "object",
-                            "propertyNames": {
-                              "type": "string",
-                              "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                            "properties": {
+                              "text": {
+                                "anyOf": [
+                                  {
+                                    "type": "string"
+                                  },
+                                  {
+                                    "type": "object",
+                                    "propertyNames": {
+                                      "type": "string",
+                                      "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
+                                    },
+                                    "additionalProperties": {
+                                      "type": "string"
+                                    }
+                                  }
+                                ]
+                              },
+                              "tags": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "description": "Variant tags, e.g. [backend, lead]"
+                              }
                             },
-                            "additionalProperties": {
-                              "type": "string"
-                            }
+                            "required": [
+                              "text"
+                            ],
+                            "additionalProperties": false
                           }
                         ]
                       }

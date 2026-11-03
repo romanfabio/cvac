@@ -14,6 +14,12 @@ version: 1
 meta:
   defaultLocale: en
   locales: [en, it]
+  # Tailored versions of the same CV: cvac build --variant backend
+  # Tag sections, items or bullets (tags: [backend]); untagged ones are always kept.
+  # variants:
+  #   backend:
+  #     tags: [backend]
+  #     title: Backend Engineer
 
 basics:
   name: Your Name
@@ -42,6 +48,8 @@ sections:
         highlights:
           - "Impact first: what changed thanks to you, with numbers"
           - Another achievement
+          # A bullet only some variants show:
+          # - { text: Scaled the API to 10k requests/s, tags: [backend] }
 
   - type: education
     items:

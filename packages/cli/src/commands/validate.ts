@@ -2,11 +2,12 @@ import { buildPdf, hasErrors } from "@cvac/core";
 import { loadBundledFonts } from "@cvac/fonts";
 import { loadInputs, locate } from "../inputs.ts";
 import { dedupe, type Io, printDiagnostics, summarize } from "../report.ts";
-import { parseLangs } from "./build.ts";
+import { parseLangs, parseVariants } from "./build.ts";
 
 export interface ValidateFlags {
   theme?: string;
   lang?: string;
+  variant?: string;
 }
 
 /**
@@ -23,13 +24,18 @@ export async function runValidate(
 
   if (inputs.content && !hasErrors(diags)) {
     const fonts = loadBundledFonts();
-    for (const lang of parseLangs(flags.lang)) {
-      const r = await buildPdf(inputs.content, {
-        fonts,
-        ...(inputs.theme ? { theme: inputs.theme } : {}),
-        ...(lang ? { locale: lang } : {}),
-      });
-      diags.push(...r.diagnostics);
+    const { variants, diagnostics: vd } = parseVariants(flags.variant, inputs.content);
+    diags.push(...vd);
+    for (const variant of variants) {
+      for (const lang of parseLangs(flags.lang)) {
+        const r = await buildPdf(inputs.content, {
+          fonts,
+          ...(inputs.theme ? { theme: inputs.theme } : {}),
+          ...(lang ? { locale: lang } : {}),
+          ...(variant ? { variant } : {}),
+        });
+        diags.push(...r.diagnostics);
+      }
     }
     diags = dedupe(locate(diags, inputs));
   }

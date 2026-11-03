@@ -5,6 +5,7 @@ import type { FontSpec, ResolvedTheme } from "../theme/resolve.ts";
 import type { Block, BlockRole, Group, LayoutDocument, Paragraph, Run, TextStyle } from "./ir.ts";
 
 type Section = ResolvedContent["sections"][number];
+type Highlight = string | { text: string; tags?: string[] | undefined };
 
 const SEP = " · ";
 
@@ -162,7 +163,7 @@ class Builder {
     dates?: string | undefined;
     subtitle?: string | undefined;
     text?: string | undefined;
-    highlights?: string[] | undefined;
+    highlights?: Highlight[] | undefined;
     footer?: string | undefined;
     first: boolean;
   }) {
@@ -197,7 +198,8 @@ class Builder {
       );
     }
     for (const p of e.text ? paragraphs(e.text) : []) blocks.push(this.body(p));
-    for (const h of e.highlights ?? []) {
+    for (const item of e.highlights ?? []) {
+      const h = typeof item === "string" ? item : item.text;
       blocks.push(
         this.para("bullet", [{ text: h, style: this.bodyStyle }], {
           indent: 11,

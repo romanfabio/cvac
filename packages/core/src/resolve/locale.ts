@@ -76,5 +76,14 @@ export function resolveLocale(content: Content, requested?: string): LocaleResol
     return node;
   };
 
-  return { content: walk(content, []) as ResolvedContent, locale, diagnostics };
+  // `meta` is configuration, not rendered text: variant overrides are
+  // resolved when a variant copies them into `basics`, so warnings point at
+  // what is actually built.
+  const { meta, ...rest } = content;
+  const resolved = walk(rest, []) as Omit<ResolvedContent, "meta">;
+  return {
+    content: (meta ? { ...resolved, meta } : resolved) as ResolvedContent,
+    locale,
+    diagnostics,
+  };
 }
