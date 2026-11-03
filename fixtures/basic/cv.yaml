@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=../../packages/core/schemas/cv.schema.json
+version: 1
+meta:
+  defaultLocale: en
+  locales: [en, it]
+
+basics:
+  name: Jane Doe
+  title:
+    en: Senior Software Engineer
+    it: Ingegnere del Software Senior
+  email: jane.doe@example.com
+  phone: "+39 333 000 0000"
+  location: { city: Milano, country: { en: Italy, it: Italia } }
+  summary:
+    en: Backend engineer with 10 years of experience building distributed systems.
+    it: Ingegnere backend con 10 anni di esperienza in sistemi distribuiti.
+  profiles:
+    - network: GitHub
+      username: janedoe
+      url: https://github.com/janedoe
+
+sections:
+  - type: experience
+    items:
+      - company: Acme Corp
+        role: { en: Senior Developer, it: Sviluppatrice Senior }
+        start: 2021-03
+        end: present
+        tags: [backend]
+        highlights:
+          - Designed an event-driven billing platform processing 2M events/day
+          - Led a team of 5 engineers
+      - company: Globex
+        role: Developer
+        start: 2016
+        end: 2021-02
+        highlights: [Migrated a monolith to services]
+
+  - type: education
+    items:
+      - institution: Politecnico di Milano
+        degree: { en: MSc Computer Engineering, it: Laurea Magistrale in Ingegneria Informatica }
+        start: 2011
+        end: 2016
+
+  - type: skills
+    items:
+      - name: Languages
+        keywords: [TypeScript, C#, Go]
+      - name: Cloud
+        keywords: [Azure, Kubernetes]
+
+  - type: languages
+    items:
+      - { language: { en: Italian, it: Italiano }, fluency: Native }
+      - { language: { en: English, it: Inglese }, fluency: C1 }
+
+  - type: custom
+    id: volunteering
+    title: { en: Volunteering, it: Volontariato }
+    items:
+      - title: CoderDojo Milano
+        subtitle: Mentor
+        start: 2019
