@@ -4,6 +4,7 @@ import { buildLayout } from "./layout/build.ts";
 import type { LayoutDocument } from "./layout/ir.ts";
 import type { Content } from "./model/content.ts";
 import type { Theme } from "./model/theme.ts";
+import { renderDocx } from "./render/docx/render.ts";
 import { renderPdf } from "./render/pdf/render.ts";
 import { resolveLocale } from "./resolve/locale.ts";
 import { resolveTheme } from "./theme/resolve.ts";
@@ -51,4 +52,31 @@ export async function buildPdf(content: Content, opts: BuildPdfOptions): Promise
   const out: BuildPdfResult = { pages: r.pages, diagnostics: [...l.diagnostics, ...r.diagnostics] };
   if (r.pdf) out.pdf = r.pdf;
   return out;
+}
+
+export interface BuildDocxOptions extends LayoutOptions {
+  date?: Date;
+  /** Font files: embedded by default, and used for font-table hints. */
+  fonts?: FontSet;
+  embedFonts?: boolean;
+}
+
+export interface BuildDocxResult {
+  docx?: Uint8Array;
+  diagnostics: Diagnostic[];
+}
+
+/** Parsed content -> DOCX bytes (same layout as the PDF, paginated by Word). */
+export async function buildDocx(
+  content: Content,
+  opts: BuildDocxOptions = {},
+): Promise<BuildDocxResult> {
+  const l = layout(content, opts);
+  if (!l.layout) return { diagnostics: l.diagnostics };
+  const r = await renderDocx(l.layout, {
+    ...(opts.date ? { date: opts.date } : {}),
+    ...(opts.fonts ? { fonts: opts.fonts } : {}),
+    ...(opts.embedFonts !== undefined ? { embedFonts: opts.embedFonts } : {}),
+  });
+  return { docx: r.docx, diagnostics: [...l.diagnostics, ...r.diagnostics] };
 }

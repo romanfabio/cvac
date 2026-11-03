@@ -19,6 +19,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "docx": "9.15.2",
+    "fflate": "0.8.3",
+    "fontkit": "2.0.4",
     "linebreak": "2.0.0",
     "pdfkit": "0.20.2",
     "yaml": "2.9.1",

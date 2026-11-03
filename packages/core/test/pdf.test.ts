@@ -7,7 +7,7 @@ import { loadBundledFonts } from "../../fonts/src/index.ts";
 import { buildPdf, parseContent } from "../src/index.ts";
 
 const FIXTURES = join(import.meta.dirname, "..", "..", "..", "fixtures");
-const GOLDEN_FILE = join(FIXTURES, "golden.json");
+const GOLDEN_FILE = join(FIXTURES, "golden-pdf.json");
 const UPDATE = process.env.UPDATE_GOLDEN === "1";
 
 /** fixture name -> locales to build */

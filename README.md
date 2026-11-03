@@ -7,28 +7,35 @@ Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** o
 - **ATS-aware.** Layout is free, and a linter (on by default) warns about choices that hurt HR scanners.
 - **Variants and languages.** Tag items to build tailored variants, and write text as `{ en: ..., it: ... }`.
 
-> Status: early development. Model, parsing and PDF rendering with the default theme work (M1–M2). DOCX, the CLI and the web editor are next.
+> Status: early development. Model, parsing, PDF and DOCX rendering with the default theme work (M1–M3). The CLI and the web editor are next.
 
 ## Packages
 
-| Package                         | Description                                                                            |
-| ------------------------------- | -------------------------------------------------------------------------------------- |
-| [`@cvac/core`](packages/core)   | Model, YAML parsing with located diagnostics, JSON Schemas, i18n, layout, PDF renderer |
-| [`@cvac/fonts`](packages/fonts) | Bundled fonts (SIL OFL) and a Node loader                                              |
+| Package                         | Description                                                                                      |
+| ------------------------------- | ------------------------------------------------------------------------------------------------ |
+| [`@cvac/core`](packages/core)   | Model, YAML parsing with located diagnostics, JSON Schemas, i18n, layout, PDF and DOCX renderers |
+| [`@cvac/fonts`](packages/fonts) | Bundled fonts (SIL OFL) and a Node loader                                                        |
 
 ## How it works
 
 ```
 cv.yaml ─parse─► Content ─resolve locale─► layout IR (flow, semantic order) ─► PDF (typeset + pdfkit)
-theme.yaml ─parse─► Theme ─layer over default─┘                              └► DOCX (M3)
+theme.yaml ─parse─► Theme ─layer over default─┘                              └► DOCX (native Word styles)
 ```
 
 Determinism: only bundled fonts are embedded, document dates are fixed
 (`2000-01-01` unless you pass `date`), there is no `Intl` or platform data in
 the output path, and compression is pure JS. Golden SHA-256 hashes in
-[`fixtures/golden.json`](fixtures/golden.json) are checked in CI on Linux,
+[`fixtures/golden-pdf.json`](fixtures/golden-pdf.json) and [`fixtures/golden-docx.json`](fixtures/golden-docx.json) are checked in CI on Linux,
 Windows and macOS. After an intended output change, run
 `UPDATE_GOLDEN=1 npm test`.
+
+DOCX output uses native Word constructs: built-in heading styles, right tab
+stops for dates, real bullet lists and keep-with-next rules, with no text
+boxes, tables or headers. The bundled fonts are embedded by default (about
+0.5 MB), so the document looks the same on every machine. Pass
+`embedFonts: false` for a small file. Word then substitutes a similar font,
+guided by the font table, when the font is not installed.
 
 ## Editor support
 
