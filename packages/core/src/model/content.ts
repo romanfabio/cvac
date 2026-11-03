@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EndDate, LocaleCode, LocalizedText, PartialDate, Tags, Url } from "./common.ts";
+import { LintConfig } from "./lint.ts";
 
 // ---------------------------------------------------------------------------
 // Basics
@@ -170,6 +171,7 @@ export const SECTION_TYPES = [
 export const ContentMeta = z.strictObject({
   defaultLocale: LocaleCode.optional().describe("Locale used when --lang is not given"),
   locales: z.array(LocaleCode).optional().describe("Locales this CV is written in"),
+  lint: LintConfig.optional(),
 });
 
 export const Content = z.strictObject({

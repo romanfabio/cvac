@@ -1,6 +1,6 @@
 import { mkdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
-import { buildDocx, buildPdf, type Diagnostic, hasErrors } from "@cvac/core";
+import { buildDocx, buildPdf, type Diagnostic, hasErrors, lint } from "@cvac/core";
 import { loadBundledFonts } from "@cvac/fonts";
 import { displayName, type Inputs, loadInputs, locate } from "../inputs.ts";
 import { dedupe, formatBytes, type Io, printDiagnostics, summarize } from "../report.ts";
@@ -14,6 +14,8 @@ export interface BuildFlags {
   out?: string;
   date?: string;
   embedFonts?: boolean;
+  /** Run the ATS linter (default true). Lint errors block the build. */
+  lint?: boolean;
 }
 
 export class UsageError extends Error {}
@@ -114,7 +116,10 @@ export interface BuildOutcome {
   inputs: Inputs;
 }
 
-/** Load inputs, build every target, write files. Pure of process state except fs. */
+/**
+ * Load inputs, build every target in memory, lint, then write. Nothing is
+ * written when any build or lint check reports an error.
+ */
 export async function build(cv: string | undefined, flags: BuildFlags): Promise<BuildOutcome> {
   const formats = parseFormats(flags.format);
   const langs = parseLangs(flags.lang);
@@ -137,6 +142,8 @@ export async function build(cv: string | undefined, flags: BuildFlags): Promise<
   };
 
   let failed = false;
+  const built: { target: Target; bytes: Uint8Array; pages?: number }[] = [];
+  const pagesByLang = new Map<string | undefined, number>();
   for (const t of targets) {
     const opts = { ...common, ...(t.lang ? { locale: t.lang } : {}) };
     const r =
@@ -149,13 +156,32 @@ export async function build(cv: string | undefined, flags: BuildFlags): Promise<
       failed = true;
       continue;
     }
-    mkdirSync(dirname(t.path), { recursive: true });
-    writeFileSync(t.path, bytes);
-    outcome.written.push({
-      path: t.path,
-      bytes: bytes.length,
-      ...("pages" in r && r.pages ? { pages: r.pages } : {}),
-    });
+    const pages = "pages" in r ? r.pages : undefined;
+    if (pages) pagesByLang.set(t.lang, pages);
+    built.push({ target: t, bytes, ...(pages ? { pages } : {}) });
+  }
+
+  if (flags.lint !== false) {
+    for (const lang of langs) {
+      const pages = pagesByLang.get(lang);
+      outcome.diagnostics.push(
+        ...lint(inputs.content, {
+          fonts,
+          ...(inputs.theme ? { theme: inputs.theme } : {}),
+          ...(lang ? { locale: lang } : {}),
+          ...(pages ? { pages } : {}),
+        }),
+      );
+    }
+  }
+  if (hasErrors(outcome.diagnostics)) failed = true;
+
+  if (!failed) {
+    for (const { target, bytes, pages } of built) {
+      mkdirSync(dirname(target.path), { recursive: true });
+      writeFileSync(target.path, bytes);
+      outcome.written.push({ path: target.path, bytes: bytes.length, ...(pages ? { pages } : {}) });
+    }
   }
 
   outcome.diagnostics = dedupe(locate(outcome.diagnostics, inputs));

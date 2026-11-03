@@ -27,6 +27,8 @@ export interface Diagnostic {
   path?: (string | number)[];
   /** Which input the path refers to. */
   origin?: "content" | "theme";
+  /** How to fix it, shown under the message. */
+  help?: string;
 }
 
 export function hasErrors(diagnostics: readonly Diagnostic[]): boolean {

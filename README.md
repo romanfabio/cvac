@@ -7,7 +7,7 @@ Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** o
 - **ATS-aware.** Layout is free, and a linter (on by default) warns about choices that hurt HR scanners.
 - **Variants and languages.** Tag items to build tailored variants, and write text as `{ en: ..., it: ... }`.
 
-> Status: early development. Model, parsing, PDF/DOCX rendering with the default theme and the `cvac` CLI work (M1–M4). The ATS linter, variants and the web editor are next.
+> Status: early development. Model, parsing, PDF/DOCX rendering, the `cvac` CLI and the ATS linter work (M1–M5). Variants, advanced themes and the web editor are next.
 
 ## Packages
 
@@ -25,6 +25,7 @@ cvac build                         # -> cv.pdf
 cvac build --format all --lang en,it   # -> cv.en.pdf, cv.en.docx, cv.it.pdf, cv.it.docx
 cvac watch                         # rebuild on every save
 cvac validate --lang en,it         # check without writing files
+cvac lint --lang en,it --strict    # validation + ATS linter, fail on warnings (CI)
 ```
 
 `build` options:
@@ -32,10 +33,42 @@ cvac validate --lang en,it         # check without writing files
 - `-o, --out <path>`: output file, or a directory when there are several outputs.
 - `--date <iso>`: date written into the files. `SOURCE_DATE_EPOCH` also works.
 - `--no-embed-fonts`: build a smaller DOCX without the fonts inside.
+- `--no-lint`: skip the ATS linter.
 
 Exit codes: `0` ok, `1` problems in your files, `2` bad usage.
 
 In this repo, run the CLI from source with `npm run cvac -- build ...`.
+
+## ATS linter
+
+`cvac build` and `cvac lint` check what helps or hurts applicant tracking
+systems and human readers. Examples:
+- non-standard section headings
+- missing dates, or an end date before the start date
+- missing email, phone or headline
+- no skills section, or empty sections
+- photos and emoji
+- characters the font cannot draw
+- small fonts, low contrast and narrow margins
+- more than two pages
+
+Errors block the build. Warnings and notes are printed, but the files are
+still written. Run `cvac lint --list` for every rule and its default level.
+To change a level, add this to `cv.yaml`:
+
+```yaml
+meta:
+  lint: { photo: off, missing-phone: warning }
+```
+
+Some ATS safety is built into the output rather than linted:
+- text is extracted in reading order
+- lines break only at spaces, so URLs, emails and hyphenated words stay intact
+- contact details stay in the page body, never in a header
+- the DOCX uses native heading styles and lists
+
+A round-trip test checks that every piece of text can be read back from the
+PDF and the DOCX, in order.
 
 ## How it works
 

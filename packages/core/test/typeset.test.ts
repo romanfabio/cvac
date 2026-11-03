@@ -50,9 +50,11 @@ describe("typeset: line breaking", () => {
     expect(aside && aside.type === "text" && aside.x).toBe(110 - 20);
   });
 
-  it("never breaks after a hyphen (ATS de-hyphenation safety)", () => {
+  it("breaks only at whitespace, never inside hyphenated words or URLs (ATS safety)", () => {
     const pages = typeset(doc([p("aaaaaaaaaaaaaaa event-driven")]), mono);
     expect(texts(pages)).toEqual([["aaaaaaaaaaaaaaa", "event-driven"]]);
+    const url = typeset(doc([p("see x.io/aa/bbbbbbbbbbbb")]), mono);
+    expect(texts(url)).toEqual([["see", "x.io/aa/bbbbbbbbbbbb"]]);
   });
 
   it("hard-splits words wider than the line", () => {

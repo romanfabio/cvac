@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { Command, CommanderError, Option } from "commander";
 import { runBuild, UsageError } from "./commands/build.ts";
 import { runInit, runSchema } from "./commands/init.ts";
+import { runLint } from "./commands/lint.ts";
 import { runValidate } from "./commands/validate.ts";
 import { startWatch } from "./commands/watch.ts";
 import { type Io, processIo } from "./report.ts";
@@ -36,7 +37,8 @@ export function createProgram(
         "--date <iso>",
         "document date written into the files (default: SOURCE_DATE_EPOCH or 2000-01-01)",
       )
-      .addOption(new Option("--no-embed-fonts", "DOCX: do not embed fonts (smaller file)"));
+      .addOption(new Option("--no-embed-fonts", "DOCX: do not embed fonts (smaller file)"))
+      .addOption(new Option("--no-lint", "skip the ATS linter"));
 
   buildOptions(program.command("build"))
     .description("build the CV")
@@ -58,6 +60,18 @@ export function createProgram(
     .option("-l, --lang <locales>", "also check translations for these languages")
     .action(async (cv: string, flags) => {
       setCode(await runValidate(cv, flags, io));
+    });
+
+  program
+    .command("lint")
+    .description("validate and run the ATS linter without writing files")
+    .argument("[cv]", "CV file", "cv.yaml")
+    .option("-t, --theme <file>", "theme file (default: theme.yaml next to the CV, if any)")
+    .option("-l, --lang <locales>", "language(s) to check, e.g. en,it")
+    .option("--strict", "fail on warnings too (useful in CI)")
+    .option("--list", "list the rules and their default levels")
+    .action(async (cv: string, flags) => {
+      setCode(await runLint(cv, flags, io));
     });
 
   program

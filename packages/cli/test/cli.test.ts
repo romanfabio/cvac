@@ -220,3 +220,105 @@ describe("option parsing", () => {
     ]);
   });
 });
+
+describe("cvac lint", () => {
+  beforeEach(async () => {
+    await run("init");
+  });
+
+  it("passes the starter CV in every language", async () => {
+    const r = await run("lint", "--lang", "en,it");
+    expect(r.code, r.text()).toBe(0);
+    expect(r.out).toEqual(["✔ cv.yaml: no problems found"]);
+  });
+
+  it("reports located findings with help, in source order", async () => {
+    writeFileSync(
+      "cv.yaml",
+      [
+        "basics:",
+        "  name: Jane 🚀",
+        "  email: j@example.com",
+        "sections:",
+        "  - type: experience",
+        "    title: My Journey",
+        "    items: [{ company: A, role: B, start: 2022, end: 2021 }]",
+        "",
+      ].join("\n"),
+    );
+    const r = await run("lint");
+    expect(r.code).toBe(1);
+    const headers = r.err.filter((l) => /^(error|warning|note)\[/.test(l));
+    expect(headers).toEqual([
+      "note[lint/missing-phone]: No phone number",
+      "note[lint/missing-headline]: No headline",
+      "warning[lint/emoji]: Text contains 🚀",
+      "note[lint/no-skills]: No skills section",
+      "warning[lint/nonstandard-heading]: Heading 'My Journey' is not a standard experience heading",
+      "error[lint/date-order]: End date 2021 is before start date 2022",
+    ]);
+    expect(r.text()).toContain("  --> cv.yaml:6:12");
+    expect(r.text()).toContain("  = help: Swap the dates or fix the typo");
+    expect(r.text()).toContain("✘ cv.yaml: 1 error, 2 warnings, 3 notes");
+  });
+
+  it("fails on warnings only with --strict", async () => {
+    writeFileSync(
+      "cv.yaml",
+      readFileSync("cv.yaml", "utf8").replace(
+        "  - type: experience\n",
+        "  - type: experience\n    title: My Journey\n",
+      ),
+    );
+    expect((await run("lint")).code).toBe(0);
+    const strict = await run("lint", "--strict");
+    expect(strict.code).toBe(1);
+    expect(strict.text()).toContain("(--strict)");
+  });
+
+  it("respects meta.lint overrides", async () => {
+    writeFileSync(
+      "cv.yaml",
+      readFileSync("cv.yaml", "utf8")
+        .replace(
+          "  locales: [en, it]\n",
+          "  locales: [en, it]\n  lint: { nonstandard-heading: off }\n",
+        )
+        .replace("  - type: experience\n", "  - type: experience\n    title: My Journey\n"),
+    );
+    expect((await run("lint", "--strict")).code).toBe(0);
+  });
+
+  it("lists the rules", async () => {
+    const r = await run("lint", "--list");
+    expect(r.code).toBe(0);
+    expect(r.out.some((l) => /^missing-glyphs\s+error\s+/.test(l))).toBe(true);
+  });
+
+  it("build lints by default: lint errors block writing, --no-lint skips it", async () => {
+    writeFileSync(
+      "cv.yaml",
+      readFileSync("cv.yaml", "utf8").replace("Your Name", '"Your Name 漢"'),
+    );
+    const blocked = await run("build");
+    expect(blocked.code).toBe(1);
+    expect(blocked.text()).toContain("error[lint/missing-glyphs]");
+    expect(existsSync("cv.pdf")).toBe(false);
+
+    const skipped = await run("build", "--no-lint");
+    expect(skipped.code, skipped.text()).toBe(0);
+    expect(existsSync("cv.pdf")).toBe(true);
+  });
+
+  it("build prints lint warnings but still writes", async () => {
+    writeFileSync(
+      "cv.yaml",
+      readFileSync("cv.yaml", "utf8").replace('  phone: "+39 000 000 0000"\n', ""),
+    );
+    const r = await run("build");
+    expect(r.code).toBe(0);
+    expect(r.text()).toContain("note[lint/missing-phone]");
+    expect(r.text()).toContain("built with 1 note");
+    expect(existsSync("cv.pdf")).toBe(true);
+  });
+});

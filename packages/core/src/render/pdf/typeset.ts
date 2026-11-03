@@ -339,14 +339,12 @@ class Typesetter {
     const breaker = new LineBreaker(text);
     let last = 0;
     for (let bk = breaker.nextBreak(); bk; bk = breaker.nextBreak()) {
-      // ATS safety: never break after a hyphen. Text extractors treat a
-      // line-final "-" as hyphenation and glue the halves ("event-driven"
-      // -> "eventdriven", URLs and emails get corrupted).
-      if (
-        !bk.required &&
-        bk.position < text.length &&
-        /[-‐]$/.test(text.slice(last, bk.position))
-      ) {
+      // ATS safety: break lines only at whitespace. Text extractors turn a
+      // line break into a space (or, after "-", glue the halves as
+      // de-hyphenation), so breaking inside a token corrupts URLs, emails
+      // and hyphenated words ("event-driven" -> "eventdriven"). Tokens wider
+      // than a whole line still fall back to hardSplit.
+      if (!bk.required && bk.position < text.length && !/\s$/.test(text.slice(last, bk.position))) {
         continue;
       }
       const pieces: Piece[] = [];

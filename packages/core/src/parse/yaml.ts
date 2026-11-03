@@ -64,7 +64,10 @@ export class SourceDoc {
         break;
       }
     }
-    const target = opts.key && keyNode ? keyNode : isNode(node) ? node : keyNode;
+    // Point at the key for whole mappings/lists: underlining every line of
+    // a block is noise, the key names what the message is about.
+    const container = isMap(node) || isSeq(node);
+    const target = (opts.key || container) && keyNode ? keyNode : isNode(node) ? node : keyNode;
     return this.rangeOf(target?.range ?? undefined);
   }
 

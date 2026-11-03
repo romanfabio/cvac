@@ -25,6 +25,148 @@
             "type": "string",
             "pattern": "^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$"
           }
+        },
+        "lint": {
+          "type": "object",
+          "properties": {
+            "nonstandard-heading": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "missing-dates": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "date-order": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "missing-email": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "missing-phone": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "missing-headline": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "no-skills": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "empty-section": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "photo": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "emoji": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "missing-glyphs": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "small-font": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "low-contrast": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "narrow-margins": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "too-long": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "description": "ATS linter rule levels: off, info, warning or error. Run `cvac lint --list` for the rules."
         }
       },
       "additionalProperties": false

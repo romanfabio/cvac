@@ -50,6 +50,7 @@ const decode = (s: string) =>
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
     .replace(/&amp;/g, "&");
 
 describe("DOCX determinism (golden hashes)", () => {
