@@ -1,0 +1,22 @@
+{
+  "name": "@cvac/fonts",
+  "version": "0.0.0",
+  "description": "Fonts bundled with CV as Code (SIL Open Font License) and a Node loader.",
+  "license": "MIT AND OFL-1.1",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./files/*": "./files/*"
+  },
+  "files": [
+    "dist",
+    "files"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}

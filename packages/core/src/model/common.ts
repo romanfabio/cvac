@@ -6,16 +6,32 @@ export const LocaleCode = z
   .regex(/^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/, "Expected a locale code like 'en' or 'en-GB'");
 
 /**
+ * Parsed form of a per-language text map. The explicit `$l10n` marker makes
+ * localized values unambiguous for resolution (and survives structured clone,
+ * unlike a class instance, so parsed content can cross a Web Worker boundary).
+ */
+export interface Localized {
+  $l10n: Record<string, string>;
+}
+
+export function isLocalized(v: unknown): v is Localized {
+  return typeof v === "object" && v !== null && "$l10n" in v;
+}
+
+/**
  * Text that is either a plain string (same in every language) or a map of
  * locale -> string, e.g. `{ en: "Software Engineer", it: "Ingegnere del Software" }`.
  */
 export const LocalizedText = z.union([
   z.string(),
-  z.record(LocaleCode, z.string()).refine((m) => Object.keys(m).length > 0, {
-    message: "Localized text needs at least one language",
-  }),
+  z
+    .record(LocaleCode, z.string())
+    .refine((m) => Object.keys(m).length > 0, {
+      message: "Localized text needs at least one language",
+    })
+    .transform((m): Localized => ({ $l10n: m })),
 ]);
-export type LocalizedText = z.infer<typeof LocalizedText>;
+export type LocalizedText = z.output<typeof LocalizedText>;
 
 /**
  * Partial ISO date: `YYYY`, `YYYY-MM` or `YYYY-MM-DD`.

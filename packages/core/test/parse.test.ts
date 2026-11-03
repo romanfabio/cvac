@@ -135,3 +135,24 @@ describe("JSON Schema", () => {
     expect(contentJsonSchema()).toMatchObject({ type: "object", required: ["basics"] });
   });
 });
+
+describe("diagnostic quality", () => {
+  it("distinguishes wrong types from missing properties", () => {
+    const r = parseContent("basics:\n  name: 5\n  email: j@example.com\n");
+    expect(r.diagnostics).toMatchObject([
+      { code: "invalid-type", message: "Expected string, got number 5 at 'basics.name'" },
+    ]);
+  });
+
+  it("explains unquoted colons in text", () => {
+    const r = parseContent(
+      `${minimal}sections:\n  - type: experience\n    items:\n      - company: A\n        role: B\n        highlights:\n          - Led X: did Y\n`,
+    );
+    expect(r.diagnostics).toHaveLength(1);
+    expect(r.diagnostics[0]).toMatchObject({
+      code: "invalid-text",
+      range: { start: { line: 11 } },
+    });
+    expect(r.diagnostics[0]?.message).toContain('wrap it in quotes: "Led X: ..."');
+  });
+});

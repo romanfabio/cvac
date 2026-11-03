@@ -115,7 +115,9 @@ export function parseYamlWith<S extends z.ZodType>(
   if (diagnostics.some((d) => d.severity === "error")) return { result: { diagnostics }, src };
 
   const data: unknown = src.doc.toJS() ?? {};
-  const parsed = schema.safeParse(data);
+  // reportInput: issues carry the offending value, needed to tell
+  // "missing" apart from "wrong type" and to build helpful messages.
+  const parsed = schema.safeParse(data, { reportInput: true });
   if (!parsed.success) {
     for (const issue of parsed.error.issues) diagnostics.push(...issueToDiagnostics(src, issue));
     return { result: { diagnostics }, src };
@@ -184,14 +186,7 @@ function issueToDiagnostics(src: SourceDoc, issue: z.core.$ZodIssue): Diagnostic
           }),
         ];
       }
-      return [
-        src.diag({
-          code: "invalid-value",
-          severity: "error",
-          message: unionMessage(issue, where),
-          path,
-        }),
-      ];
+      return [unionDiagnostic(src, issue, path, where)];
     default:
       return [
         src.diag({
@@ -204,13 +199,55 @@ function issueToDiagnostics(src: SourceDoc, issue: z.core.$ZodIssue): Diagnostic
   }
 }
 
-/** For unions (e.g. LocalizedText) report the most specific branch message. */
-function unionMessage(issue: z.core.$ZodIssueInvalidUnion, where: string): string {
-  const branchMessages = issue.errors
+/**
+ * Union failures are mostly LocalizedText (string or language map). The
+ * classic trap: an unquoted "Label: value" in YAML becomes a mapping.
+ */
+function unionDiagnostic(
+  src: SourceDoc,
+  issue: z.core.$ZodIssueInvalidUnion,
+  path: (string | number)[],
+  where: string,
+): Diagnostic {
+  const input = issue.input;
+  const badKey = issue.errors
+    .flat()
+    .find((e) => e.code === "invalid_key")
+    ?.path.find((p): p is string => typeof p === "string");
+  if (
+    badKey !== undefined &&
+    input !== null &&
+    typeof input === "object" &&
+    !Array.isArray(input)
+  ) {
+    const quoteHint = /\s/.test(badKey)
+      ? ` If this is text containing ": ", wrap it in quotes: "${badKey}: ..."`
+      : "";
+    return src.diag({
+      code: "invalid-text",
+      severity: "error",
+      message: `Expected text or a language map like { en: ..., it: ... }, but '${badKey}' is not a language code${where}.${quoteHint}`,
+      path,
+    });
+  }
+  if (issue.errors.flat().every((e) => e.code === "invalid_type") && input !== undefined) {
+    return src.diag({
+      code: "invalid-type",
+      severity: "error",
+      message: `Unexpected ${describe(input)}${where}`,
+      path,
+    });
+  }
+  const specific = issue.errors
     .flat()
     .filter((e) => e.code !== "invalid_type")
     .map((e) => e.message);
-  return `${branchMessages[0] ?? issue.message}${where}`;
+  return src.diag({
+    code: "invalid-value",
+    severity: "error",
+    message: `${specific[0] ?? issue.message}${where}`,
+    path,
+  });
 }
 
 function describe(v: unknown): string {

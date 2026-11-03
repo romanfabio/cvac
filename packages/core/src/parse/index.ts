@@ -1,4 +1,5 @@
 import type { Diagnostic } from "../diagnostics.ts";
+import { isLocalized } from "../model/common.ts";
 import { type Content, Content as ContentSchema, SECTION_TYPES } from "../model/content.ts";
 import { type Theme, Theme as ThemeSchema } from "../model/theme.ts";
 import { type ParseOptions, type ParseResult, parseYamlWith, type SourceDoc } from "./yaml.ts";
@@ -83,7 +84,7 @@ function checkContent(content: Content, src: SourceDoc): Diagnostic[] {
         }),
       );
     }
-    walkLocalized(src.doc.toJS(), [], (locale, path) => {
+    walkLocalized(content, [], (locale, path) => {
       if (!declared.includes(locale)) {
         out.push(
           src.diag(
@@ -103,37 +104,20 @@ function checkContent(content: Content, src: SourceDoc): Diagnostic[] {
   return out;
 }
 
-const LOCALE_KEY = /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/;
-/** Short model property names that would otherwise look like locale codes. */
-const NON_LOCALE_KEYS = new Set(["id", "url", "end"]);
-
-/**
- * Visit locale keys of localized-text maps: mappings whose values are all
- * strings and whose keys all look like locale codes. Skips `meta`.
- */
+/** Visit the locale keys of every localized value in parsed content. */
 function walkLocalized(
   node: unknown,
   path: (string | number)[],
   visit: (locale: string, path: (string | number)[]) => void,
 ): void {
+  if (isLocalized(node)) {
+    for (const k of Object.keys(node.$l10n)) visit(k, [...path, k]);
+    return;
+  }
   if (Array.isArray(node)) {
     for (const [i, v] of node.entries()) walkLocalized(v, [...path, i], visit);
     return;
   }
   if (node === null || typeof node !== "object") return;
-  const entries = Object.entries(node);
-  const isLocalized =
-    path.length > 0 &&
-    entries.length > 0 &&
-    entries.every(
-      ([k, v]) => LOCALE_KEY.test(k) && !NON_LOCALE_KEYS.has(k) && typeof v === "string",
-    );
-  if (isLocalized) {
-    for (const [k] of entries) visit(k, [...path, k]);
-    return;
-  }
-  for (const [k, v] of entries) {
-    if (path.length === 0 && k === "meta") continue;
-    walkLocalized(v, [...path, k], visit);
-  }
+  for (const [k, v] of Object.entries(node)) walkLocalized(v, [...path, k], visit);
 }

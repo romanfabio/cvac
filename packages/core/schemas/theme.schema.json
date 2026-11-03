@@ -145,10 +145,13 @@
                     },
                     {
                       "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
+                      "minimum": 100,
+                      "maximum": 900
                     }
                   ]
+                },
+                "italic": {
+                  "type": "boolean"
                 }
               },
               "required": [
@@ -157,6 +160,7 @@
               "additionalProperties": false
             },
             "heading": {
+              "description": "Section headings",
               "type": "object",
               "properties": {
                 "family": {
@@ -188,10 +192,60 @@
                     },
                     {
                       "type": "integer",
-                      "minimum": -9007199254740991,
-                      "maximum": 9007199254740991
+                      "minimum": 100,
+                      "maximum": 900
                     }
                   ]
+                },
+                "italic": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "family"
+              ],
+              "additionalProperties": false
+            },
+            "name": {
+              "description": "Your name at the top",
+              "type": "object",
+              "properties": {
+                "family": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "A bundled font family, e.g. Inter"
+                },
+                "size": {
+                  "anyOf": [
+                    {
+                      "type": "number",
+                      "minimum": 0
+                    },
+                    {
+                      "type": "string",
+                      "pattern": "^\\d+(\\.\\d+)?(pt|mm|cm|in)$"
+                    }
+                  ]
+                },
+                "weight": {
+                  "anyOf": [
+                    {
+                      "type": "string",
+                      "const": "regular"
+                    },
+                    {
+                      "type": "string",
+                      "const": "bold"
+                    },
+                    {
+                      "type": "integer",
+                      "minimum": 100,
+                      "maximum": 900
+                    }
+                  ]
+                },
+                "italic": {
+                  "type": "boolean"
                 }
               },
               "required": [
@@ -254,6 +308,21 @@
             }
           },
           "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "format": {
+      "type": "object",
+      "properties": {
+        "date": {
+          "type": "string",
+          "enum": [
+            "MMM YYYY",
+            "MMMM YYYY",
+            "MM/YYYY",
+            "YYYY"
+          ]
         }
       },
       "additionalProperties": false

@@ -7,13 +7,28 @@ Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** o
 - **ATS-aware.** Layout is free, and a linter (on by default) warns about choices that hurt HR scanners.
 - **Variants and languages.** Tag items to build tailored variants, and write text as `{ en: ..., it: ... }`.
 
-> Status: early development. The model and parsing (M1) are done. Rendering, the CLI and the web editor are next.
+> Status: early development. Model, parsing and PDF rendering with the default theme work (M1–M2). DOCX, the CLI and the web editor are next.
 
 ## Packages
 
-| Package | Description |
-|---|---|
-| [`@cvac/core`](packages/core) | Model, YAML parsing with located diagnostics, JSON Schemas, and later layout and renderers |
+| Package                         | Description                                                                            |
+| ------------------------------- | -------------------------------------------------------------------------------------- |
+| [`@cvac/core`](packages/core)   | Model, YAML parsing with located diagnostics, JSON Schemas, i18n, layout, PDF renderer |
+| [`@cvac/fonts`](packages/fonts) | Bundled fonts (SIL OFL) and a Node loader                                              |
+
+## How it works
+
+```
+cv.yaml ─parse─► Content ─resolve locale─► layout IR (flow, semantic order) ─► PDF (typeset + pdfkit)
+theme.yaml ─parse─► Theme ─layer over default─┘                              └► DOCX (M3)
+```
+
+Determinism: only bundled fonts are embedded, document dates are fixed
+(`2000-01-01` unless you pass `date`), there is no `Intl` or platform data in
+the output path, and compression is pure JS. Golden SHA-256 hashes in
+[`fixtures/golden.json`](fixtures/golden.json) are checked in CI on Linux,
+Windows and macOS. After an intended output change, run
+`UPDATE_GOLDEN=1 npm test`.
 
 ## Editor support
 

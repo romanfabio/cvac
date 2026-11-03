@@ -30,14 +30,18 @@ export const Page = z.strictObject({
 export const FontRef = z.strictObject({
   family: z.string().min(1).describe("A bundled font family, e.g. Inter"),
   size: Length.optional(),
-  weight: z.union([z.literal("regular"), z.literal("bold"), z.number().int()]).optional(),
+  weight: z
+    .union([z.literal("regular"), z.literal("bold"), z.number().int().min(100).max(900)])
+    .optional(),
+  italic: z.boolean().optional(),
 });
 
 export const Tokens = z.strictObject({
   fonts: z
     .strictObject({
       body: FontRef.optional(),
-      heading: FontRef.optional(),
+      heading: FontRef.optional().describe("Section headings"),
+      name: FontRef.optional().describe("Your name at the top"),
     })
     .optional(),
   colors: z
@@ -56,6 +60,10 @@ export const Tokens = z.strictObject({
     .optional(),
 });
 
+export const Format = z.strictObject({
+  date: z.enum(["MMM YYYY", "MMMM YYYY", "MM/YYYY", "YYYY"]).optional(),
+});
+
 export const Theme = z.strictObject({
   $schema: z.string().optional(),
   version: z.literal(1).optional(),
@@ -63,6 +71,7 @@ export const Theme = z.strictObject({
   extends: z.string().optional().describe("Theme to inherit from, e.g. 'default'"),
   page: Page.optional(),
   tokens: Tokens.optional(),
+  format: Format.optional(),
 });
 export type Theme = z.output<typeof Theme>;
 export type ThemeInput = z.input<typeof Theme>;
