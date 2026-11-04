@@ -10,9 +10,9 @@ const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex
 
 /**
  * Build the starter CV with the real CLI (from sources), to compare hashes.
- * `theme` replaces the starter theme.yaml.
+ * `editTheme` rewrites the starter theme.yaml first.
  */
-function cliHashes(theme?: string): { pdf: string; docx: string } {
+function cliHashes(editTheme?: (starter: string) => string): { pdf: string; docx: string } {
   const dir = mkdtempSync(join(tmpdir(), "cvac-e2e-"));
   try {
     const cli = (...args: string[]) =>
@@ -22,7 +22,10 @@ function cliHashes(theme?: string): { pdf: string; docx: string } {
         { cwd: dir, stdio: "pipe" },
       );
     cli("init");
-    if (theme !== undefined) writeFileSync(join(dir, "theme.yaml"), theme);
+    if (editTheme) {
+      const file = join(dir, "theme.yaml");
+      writeFileSync(file, editTheme(readFileSync(file, "utf8")));
+    }
     cli("build", "cv.yaml", "--format", "all", "--out", "out");
     return {
       pdf: sha256(readFileSync(join(dir, "out/cv.pdf"))),
@@ -60,7 +63,7 @@ test("a built-in serif theme gives the CLI's bytes, loading its font on demand",
   page,
 }) => {
   const theme = "version: 1\nextends: classic\n";
-  const cli = cliHashes(theme);
+  const cli = cliHashes(() => theme);
   await page.addInitScript((t) => localStorage.setItem("cvac:theme.yaml", t), theme);
   const fonts: string[] = [];
   page.on("request", (r) => {
@@ -76,6 +79,22 @@ test("a built-in serif theme gives the CLI's bytes, loading its font on demand",
     page.getByRole("button", { name: "Download DOCX" }).click(),
   ]);
   expect(sha256(readFileSync(await download.path()))).toBe(cli.docx);
+});
+
+test("the theme picker rewrites extends: in theme.yaml", async ({ page }) => {
+  const cli = cliHashes((t) => t.replace("extends: default", "extends: modern"));
+  await open(page);
+  const picker = page.getByLabel("Theme");
+  await expect(picker).toHaveValue("default");
+  await picker.selectOption("modern");
+  await expect(hash(page)).toHaveAttribute("data-sha256", cli.pdf);
+
+  await page.getByRole("tab", { name: "theme.yaml" }).click();
+  await expect(page.locator(".editor .cm-content")).toContainText("extends: modern");
+  // Undo in the editor goes back to the previous base, and the picker follows.
+  await page.locator(".editor .cm-content").click();
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(picker).toHaveValue("default");
 });
 
 test("the default theme loads only the sans-serif font", async ({ page }) => {

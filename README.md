@@ -268,6 +268,7 @@ meta:
 **Built-in ATS safety:**
 - The PDF's text reads in semantic order, even with a sidebar (header, then main column, then sidebar).
 - Lines break only at spaces, so URLs, emails and hyphenated words are never split.
+- A wrapped contact or languages line never starts with a `·` separator: the PDF drops it at the break, and in the DOCX it stays with the item before.
 - Contact details stay in the page body, never in a page header.
 
 A test checks that every piece of text can be read back from both formats, in order.
@@ -326,7 +327,7 @@ npm run web        # http://localhost:5173
 The editor rebuilds your CV in a Web Worker as you type, with the same core code as the CLI. Nothing is uploaded: your files and photo stay in the browser, which saves them locally.
 
 - `cv.yaml` and `theme.yaml` each have a tab, with schema-based completion. cvac's diagnostics appear inline and in a problems list; clicking one jumps to the line.
-- The toolbar picks the language and the variant, sets the photo file, and downloads the PDF or DOCX.
+- The toolbar picks the built-in theme (it rewrites `extends:` in `theme.yaml`, so your other settings stay), the language and the variant, sets the photo file, and downloads the PDF or DOCX.
 - The status bar shows the page count, build time and the PDF's SHA-256. It matches `cvac build` for the same files.
 
 `npm run build` also produces a static site in `apps/web/dist` that any static host can serve. In the web editor, `extends` can only name a built-in theme.

@@ -77,6 +77,7 @@ The CLI (`packages/cli/src`) reads files (`inputs.ts`: the CV, the theme chain i
 
 - **Reading order:** text is emitted in semantic reading order. In PDFs, page layers are emitted background, header, photo, main, sidebar.
 - **Line breaks:** break only at whitespace, never inside a token (URLs, emails, `event-driven`); only words wider than a whole line are split by characters.
+- **Separators:** runs marked `separator: true` (the " · " between contact items and languages) are decoration. The PDF drops one that would end or start a line; the DOCX binds it to the item before with a no-break space. The round-trip test skips them.
 - **DOCX structure:** one column in CV order (`linear: true`), native heading styles and lists, no text boxes, tables or page headers. Contact details stay in the body.
 - **Round-trip:** every layout text run must be recoverable, in order, from both formats.
 

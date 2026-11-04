@@ -1,10 +1,11 @@
-import { type Diagnostic, STARTER_CV, STARTER_THEME } from "@cvac/core/editor";
+import { BUILTIN_THEME_NAMES, type Diagnostic, STARTER_CV, STARTER_THEME } from "@cvac/core/editor";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Editor, type EditorHandle } from "./Editor.tsx";
 import type { BuildRequest, BuildResult } from "./engine.ts";
 import { CV_FILE, THEME_FILE } from "./files.ts";
 import { Preview } from "./Preview.tsx";
 import { fromBase64, load, save, toBase64 } from "./storage.ts";
+import { readExtends, setExtends } from "./themeFile.ts";
 
 const DEBOUNCE_MS = 250;
 
@@ -120,6 +121,12 @@ export function App() {
     save(key, value || undefined);
   };
 
+  // The picker edits `extends:` in theme.yaml, so the file stays the source of truth.
+  const base = readExtends(files[THEME_FILE] ?? "") ?? "default";
+  const builtin = (BUILTIN_THEME_NAMES as readonly string[]).includes(base);
+  const pickTheme = (name: string) =>
+    onChange(THEME_FILE, setExtends(files[THEME_FILE] ?? "", name));
+
   const diags = result?.diagnostics ?? [];
   const errors = diags.filter((d) => d.severity === "error").length;
   const missingPhoto = result?.photo !== undefined && !assets[result.photo];
@@ -131,6 +138,17 @@ export function App() {
           CV as Code <span>{"·"} live editor</span>
         </h1>
         <div className="controls">
+          <label title="Sets extends: in theme.yaml">
+            Theme
+            <select value={base} onChange={(e) => pickTheme(e.target.value)}>
+              {BUILTIN_THEME_NAMES.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+              {!builtin && <option value={base}>{base}</option>}
+            </select>
+          </label>
           <label>
             Language
             <select value={locale} onChange={(e) => pick("locale", e.target.value)}>

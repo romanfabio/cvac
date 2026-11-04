@@ -194,7 +194,7 @@ class Builder {
     // header), so ATS parsers can find email and phone.
     const contact: Run[] = [];
     const add = (text: string, link?: string) => {
-      if (contact.length) contact.push({ text: SEP, style: this.mutedStyle });
+      if (contact.length) contact.push({ text: SEP, style: this.mutedStyle, separator: true });
       contact.push(
         link ? { text, style: this.mutedStyle, link } : { text, style: this.mutedStyle },
       );
@@ -387,7 +387,7 @@ class Builder {
       case "languages": {
         const runs: Run[] = [];
         s.items.forEach((it, i) => {
-          if (i > 0) runs.push({ text: SEP, style: this.mutedStyle });
+          if (i > 0) runs.push({ text: SEP, style: this.mutedStyle, separator: true });
           runs.push({ text: it.language, style: this.boldStyle });
           if (it.fluency) runs.push({ text: ` (${it.fluency})`, style: this.bodyStyle });
         });

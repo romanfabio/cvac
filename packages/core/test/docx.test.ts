@@ -116,7 +116,11 @@ describe("DOCX structure (ATS readability)", () => {
     expect(ps.slice(0, 6)).toEqual([
       ["Title", "Jane Doe"],
       ["Normal", "Senior Software Engineer"],
-      ["Normal", "jane.doe@example.com · +39 333 000 0000 · Milano, Italy · github.com/janedoe"],
+      // A no-break space binds each separator to the item before it.
+      [
+        "Normal",
+        "jane.doe@example.com\u00a0· +39 333 000 0000\u00a0· Milano, Italy\u00a0· github.com/janedoe",
+      ],
       ["Heading1", "Summary"],
       ["Normal", "Backend engineer with 10 years of experience building distributed systems."],
       ["Heading1", "Experience"],

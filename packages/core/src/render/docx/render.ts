@@ -316,7 +316,10 @@ function photoCrop(photo: PhotoBox): PhotoCrop {
 }
 
 function run(r: Run): ParagraphChild {
-  const text = new TextRun({ text: r.text, ...runProps(r.style) });
+  // Word breaks lines itself: a no-break space before a separator binds it
+  // to the item before, so no line starts with " · ".
+  const content = r.separator ? r.text.replace(/^ /, "\u00a0") : r.text;
+  const text = new TextRun({ text: content, ...runProps(r.style) });
   return r.link ? new ExternalHyperlink({ link: r.link, children: [text] }) : text;
 }
 

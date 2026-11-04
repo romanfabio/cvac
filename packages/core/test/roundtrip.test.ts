@@ -42,10 +42,15 @@ function expectedRuns(name: string, locale: string, linear = false): string[] {
     ...(linear ? { linear } : {}),
   }).layout;
   if (!l) throw new Error("layout failed");
-  return l.blocks
-    .flatMap((b) => (b.kind === "group" ? b.blocks : [b]))
-    .flatMap((p) => [...p.runs, ...(p.aside ?? [])].map((r) => norm(r.text)))
-    .filter(Boolean);
+  return (
+    l.blocks
+      .flatMap((b) => (b.kind === "group" ? b.blocks : [b]))
+      .flatMap((p) => [...p.runs, ...(p.aside ?? [])])
+      // Separators (" · ") are decoration: the PDF drops them at line breaks.
+      .filter((r) => !r.separator)
+      .map((r) => norm(r.text))
+      .filter(Boolean)
+  );
 }
 
 async function pdfText(pdf: Uint8Array): Promise<string> {

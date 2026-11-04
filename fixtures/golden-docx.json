@@ -1,11 +1,11 @@
 {
-  "basic.en.docx": "688e1eefda77d63d393ecccc58da6467dc59e2a1242d05e16030ddd4445cc30d",
-  "basic.en.no-embed.docx": "acb828e146d18350f6bf242ccb88468ce7a6f835395378a6f0d035c75e518e85",
-  "basic.it.docx": "6e04b708c63c3d9579e2ea5d868e613317f57dbf2224ed04657bd41999c3ef46",
-  "basic@classic.it.docx": "1554894b5e3776ed367266f484849a522801163feafedca11120a32a360a2cb0",
-  "basic@modern.en.docx": "976f057b004ddd1b469aa8c4e542ff6315c5c70bfb6901b834e0f37f7ce19d68",
-  "long.en.docx": "e3d92b97206741b47da85dc2182656149ef953b4fa57ac218e4c255088d4b82b",
-  "sidebar.en.docx": "c3d4886347647dc4a79860a4ae26649fcbd5a219418f78533d41ce904e500716",
-  "sidebar@classic.en.docx": "fa3d9dec120e962ed5e8b6d67415c859e687d75085df85184aa8ebb94937d4b2",
-  "variants.backend.en.docx": "b35030e29bcd18c14ace7513ef484a84aca563f9bd9aadb683c63091a55136f2"
+  "basic.en.docx": "14c28a13cebc3ad924398bf96e4aebf98c780354e7c00bb69344012e97fb0cb0",
+  "basic.en.no-embed.docx": "adbb8e70b678cc8abccff57eed0722e70855cb14cb756a6711be4f50dc4a7265",
+  "basic.it.docx": "45b4a6b78b5f08b57839a8ad171f49a6af6ef9fce11b9a6f0ecbe0a03608d47c",
+  "basic@classic.it.docx": "eaacf4ddd41ec91ff92c86247ddf2d7eb3cd4233284ccf5c38fda27dc4d234e5",
+  "basic@modern.en.docx": "acecdcfe1ffded36bb5e2af7e325b7a007661f294cb8584bba910540cd02b338",
+  "long.en.docx": "460ca1a7bab01246bd9ac9bc47ac8163fb6a62c60724e0130a69246abcd4101e",
+  "sidebar.en.docx": "c36ae1f93f350b9946fb5e39774e18295c3005e1b5e5ff186dfe2bc4067d4874",
+  "sidebar@classic.en.docx": "168e5bcca3a086d0b8f49ad07472ca67c2adfa20547cf3331078ef13245c0d86",
+  "variants.backend.en.docx": "50108e7ee29809a00076edb86a607987f8c839eca432d644ce55bf725d1e10ba"
 }

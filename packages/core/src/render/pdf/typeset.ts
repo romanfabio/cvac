@@ -88,6 +88,7 @@ interface Piece {
   text: string;
   style: TextStyle;
   link?: string;
+  separator?: boolean;
   width: number;
 }
 
@@ -432,19 +433,29 @@ class Typesetter {
     let lineWidth = 0;
     let avail = firstWidth;
 
+    // A separator-only unit ("· ") last placed on the current line, dropped
+    // if the line breaks right after it.
+    let lastSep: Unit | undefined;
     for (const u of units) {
       const cur = lines[lines.length - 1] as Piece[];
+      const sepOnly = u.pieces.every((x) => x.separator);
       if (cur.length && lineWidth + u.width - u.trailing > avail + EPS) {
+        // Never end a line with a separator, nor start one with it.
+        if (lastSep) cur.splice(cur.length - lastSep.pieces.length);
+        lastSep = undefined;
         lines.push([]);
         lineWidth = 0;
         avail = width;
+        if (sepOnly) continue;
       }
       (lines[lines.length - 1] as Piece[]).push(...u.pieces);
       lineWidth += u.width;
+      lastSep = sepOnly ? u : undefined;
       if (u.required) {
         lines.push([]);
         lineWidth = 0;
         avail = width;
+        lastSep = undefined;
       }
     }
     if (lines.length > 1 && (lines[lines.length - 1] as Piece[]).length === 0) lines.pop();
@@ -494,6 +505,7 @@ class Typesetter {
         if (!t) continue;
         const piece: Piece = { text: t, style: b.run.style, width: this.m.width(t, b.run.style) };
         if (b.run.link) piece.link = b.run.link;
+        if (b.run.separator) piece.separator = true;
         pieces.push(piece);
       }
       last = bk.position;

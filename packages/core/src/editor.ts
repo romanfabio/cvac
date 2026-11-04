@@ -5,5 +5,6 @@
  * worker that imports the full `@cvac/core`.
  */
 export type { Diagnostic, Position, Range, Severity } from "./diagnostics.ts";
+export { BUILTIN_THEME_NAMES } from "./model/theme.ts";
 export { contentJsonSchema, themeJsonSchema } from "./schema.ts";
 export { STARTER_CV, STARTER_THEME } from "./templates.ts";

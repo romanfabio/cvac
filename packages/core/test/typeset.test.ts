@@ -84,6 +84,30 @@ describe("typeset: line breaking", () => {
   });
 });
 
+describe("typeset: separators", () => {
+  const sep = { text: " · ", style, separator: true } as const;
+  const items = (...words: string[]) => {
+    const runs = words.flatMap((w, i) => (i ? [sep, { text: w, style }] : [{ text: w, style }]));
+    return texts(typeset(doc([p("", { runs })]), mono))[0];
+  };
+
+  it("drops a separator that would end a line", () => {
+    // "a x12 · " fits on the 20-char line, the next word does not.
+    expect(items("a".repeat(12), "b".repeat(12), "cc")).toEqual([
+      "a".repeat(12),
+      `${"b".repeat(12)} · cc`,
+    ]);
+  });
+
+  it("never starts a line with a separator that did not fit", () => {
+    expect(items("a".repeat(19), "b".repeat(5))).toEqual(["a".repeat(19), "b".repeat(5)]);
+  });
+
+  it("keeps separators inside a line", () => {
+    expect(items("aa", "bb", "cc")).toEqual(["aa · bb · cc"]);
+  });
+});
+
 describe("typeset: pagination", () => {
   const line = (i: number) => p(`line${i}`);
 

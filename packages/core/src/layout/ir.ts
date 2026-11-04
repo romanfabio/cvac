@@ -23,6 +23,12 @@ export interface Run {
   text: string;
   style: TextStyle;
   link?: string;
+  /**
+   * A decorative separator between items (" · "). Renderers keep it off the
+   * start and end of lines: the PDF drops it at a line break, the DOCX binds
+   * it to the item before.
+   */
+  separator?: boolean;
 }
 
 /** What a block *is*: renderers map roles to PDF structure tags / Word styles. */
