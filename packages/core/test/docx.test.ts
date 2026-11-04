@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { BUNDLED_FACES, loadBundledFonts } from "../../fonts/src/index.ts";
 import { buildDocx, parseContent } from "../src/index.ts";
 import { obfuscate } from "../src/render/docx/fonts.ts";
+import { fixtureOptions, loadFixture } from "./fixtures.ts";
 
 const FIXTURES = join(import.meta.dirname, "..", "..", "..", "fixtures");
 const GOLDEN_FILE = join(FIXTURES, "golden-docx.json");
@@ -18,11 +19,11 @@ async function build(
   name: string,
   opts: { locale?: string; embed?: boolean; date?: Date; variant?: string } = {},
 ) {
-  const parsed = parseContent(readFileSync(join(FIXTURES, name, "cv.yaml"), "utf8"));
-  if (!parsed.value) throw new Error(JSON.stringify(parsed.diagnostics));
-  const r = await buildDocx(parsed.value, {
+  const f = loadFixture(name);
+  const r = await buildDocx(f.content, {
     fonts,
     locale: opts.locale ?? "en",
+    ...fixtureOptions(f),
     ...(opts.variant ? { variant: opts.variant } : {}),
     ...(opts.embed !== undefined ? { embedFonts: opts.embed } : {}),
     ...(opts.date ? { date: opts.date } : {}),
@@ -66,6 +67,7 @@ describe("DOCX determinism (golden hashes)", () => {
     ["basic.it.docx", "basic", { locale: "it" }],
     ["long.en.docx", "long", { locale: "en" }],
     ["variants.backend.en.docx", "variants", { locale: "en", variant: "backend" }],
+    ["sidebar.en.docx", "sidebar", { locale: "en" }],
     ["basic.en.no-embed.docx", "basic", { locale: "en", embed: false }],
   ];
 

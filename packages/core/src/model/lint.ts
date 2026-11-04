@@ -17,6 +17,7 @@ export const LINT_RULE_IDS = [
   "low-contrast",
   "narrow-margins",
   "too-long",
+  "multi-column",
 ] as const;
 export type LintRuleId = (typeof LINT_RULE_IDS)[number];
 

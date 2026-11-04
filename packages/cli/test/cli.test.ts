@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -379,5 +379,51 @@ describe("variants", () => {
     expect(r.code).toBe(0);
     expect(r.out).toContain("  backend  Backend roles  ·  tags: backend");
     expect(r.out).toContain("  hands-on (1)");
+  });
+});
+
+describe("themes and photos", () => {
+  const SIDEBAR = join(import.meta.dirname, "..", "..", "..", "fixtures", "sidebar");
+  const mediaBox = (f: string) =>
+    /\/MediaBox \[([^\]]+)\]/.exec(readFileSync(f, "latin1"))?.[1]?.trim();
+
+  it("follows extends chains across theme files, relative to each file", async () => {
+    await run("init");
+    mkdirSync("themes");
+    writeFileSync("themes/base.yaml", "extends: sidebar\npage: { size: Letter }\n");
+    writeFileSync(
+      "theme.yaml",
+      "extends: ./themes/base.yaml\ntokens: { colors: { accent: '#7a1f3d' } }\n",
+    );
+    const r = await run("build");
+    expect(r.code, r.text()).toBe(0);
+    expect(mediaBox("cv.pdf")).toBe("0 0 612 792");
+    expect(r.text()).toContain("warning[lint/multi-column]");
+  });
+
+  it("reports theme cycles", async () => {
+    await run("init");
+    writeFileSync("theme.yaml", "extends: ./other.yaml\n");
+    writeFileSync("other.yaml", "extends: ./theme.yaml\n");
+    const r = await run("build");
+    expect(r.code).toBe(1);
+    expect(r.text()).toContain("error[theme-cycle]");
+  });
+
+  it("reads the photo relative to the CV, from any working directory", async () => {
+    mkdirSync("me");
+    writeFileSync(join("me", "cv.yaml"), readFileSync(join(SIDEBAR, "cv.yaml")));
+    writeFileSync(join("me", "photo.jpg"), readFileSync(join(SIDEBAR, "photo.jpg")));
+    const r = await run("build", "me/cv.yaml", "-f", "all");
+    expect(r.code, r.text()).toBe(0);
+    expect(readFileSync(join("me", "cv.pdf"), "latin1")).toMatch(/\/Subtype \/Image/);
+  });
+
+  it("locates a missing photo in the CV", async () => {
+    writeFileSync("cv.yaml", "basics:\n  name: J\n  email: j@example.com\n  photo: nope.png\n");
+    const r = await run("build");
+    expect(r.code).toBe(1);
+    expect(r.text()).toContain("error[photo-not-found]: Cannot find the photo 'nope.png'");
+    expect(r.text()).toContain("--> cv.yaml:4:10");
   });
 });

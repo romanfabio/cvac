@@ -45,7 +45,7 @@ export async function startWatch(
   // was created next to the CV.
   function rewatch() {
     const inputs = loadInputs(cv, flags.theme);
-    const files = [inputs.cvPath, inputs.themePath].filter((p): p is string => !!p);
+    const files = inputs.files;
     const key = files.join("|");
     if (key === watched) return;
     for (const w of watchers) w.close();

@@ -3,6 +3,7 @@ export * from "./diagnostics.ts";
 export * from "./fonts.ts";
 export { type DateStyle, formatDate, formatRange } from "./i18n/dates.ts";
 export { BUILTIN_LOCALES, type Labels, labelsFor } from "./i18n/labels.ts";
+export { type ImageFormat, type ImageInfo, probeImage } from "./images.ts";
 export { buildLayout } from "./layout/build.ts";
 export type * from "./layout/ir.ts";
 export { contrast, type LintOptions, lint, lintRules, type RuleInfo } from "./lint/index.ts";
@@ -23,10 +24,16 @@ export { type ResolvedContent, resolveLocale } from "./resolve/locale.ts";
 export { resolveVariant, usedTags, type VariantResolution } from "./resolve/variant.ts";
 export { contentJsonSchema, themeJsonSchema } from "./schema.ts";
 export {
+  BUILTIN_THEMES,
   DEFAULT_FONT_FAMILY,
   defaultTheme,
   type FontSpec,
+  flattenTheme,
+  mergeThemes,
+  type ResolvedLayout,
+  type ResolvedPhoto,
   type ResolvedTheme,
   resolveTheme,
+  sidebarTheme,
   toPoints,
 } from "./theme/resolve.ts";

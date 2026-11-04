@@ -427,20 +427,53 @@ const lowContrast: Rule = {
   check({ theme, resolvedTheme }) {
     const out: Finding[] = [];
     const min = { text: 4.5, muted: 4.5, accent: 3 } as const;
+    const userSet = (key: string) =>
+      (theme?.tokens?.colors as Record<string, string | undefined> | undefined)?.[key] !==
+      undefined;
+    const bg = resolvedTheme.colors.sidebarBackground;
     for (const role of ["text", "muted", "accent"] as const) {
-      if (theme?.tokens?.colors?.[role] === undefined) continue;
-      const ratio = contrast(resolvedTheme.colors[role], "#ffffff");
-      if (ratio < min[role]) {
+      const color = resolvedTheme.colors[role];
+      const onWhite = contrast(color, "#ffffff");
+      if (userSet(role) && onWhite < min[role]) {
         out.push({
-          message: `Color ${resolvedTheme.colors[role]} has a contrast of ${ratio.toFixed(1)}:1 on white`,
+          message: `Color ${color} has a contrast of ${onWhite.toFixed(1)}:1 on white`,
           help: `Use a darker color (at least ${min[role]}:1)`,
           path: ["tokens", "colors", role],
+          origin: "theme",
+        });
+        continue;
+      }
+      // Sidebar text sits on the sidebar background.
+      const onBg = bg ? contrast(color, bg) : Number.POSITIVE_INFINITY;
+      if (bg && onBg < min[role] && (userSet(role) || userSet("sidebarBackground"))) {
+        out.push({
+          message: `Color ${color} has a contrast of ${onBg.toFixed(1)}:1 on the sidebar background ${bg}`,
+          help: `Use a lighter sidebar background or a darker ${role} color (at least ${min[role]}:1)`,
+          path: ["tokens", "colors", userSet("sidebarBackground") ? "sidebarBackground" : role],
           origin: "theme",
         });
       }
     }
     return out;
   },
+};
+
+const multiColumn: Rule = {
+  id: "multi-column",
+  level: "warning",
+  summary: "Some ATS read multi-column PDFs line by line across columns, mixing sections.",
+  check: ({ theme, resolvedTheme }) =>
+    resolvedTheme.layout.type === "sidebar"
+      ? [
+          {
+            message: "The PDF uses a sidebar layout",
+            help: "Upload the DOCX to ATS portals (always one column), or use a single-column theme for ATS submissions",
+            // Point at what turned the sidebar on: the layout, or the base theme.
+            ...(theme?.layout ? { path: ["layout"] } : theme?.extends ? { path: ["extends"] } : {}),
+            origin: "theme",
+          },
+        ]
+      : [],
 };
 
 const MIN_MARGIN_PT = 34; // 12mm
@@ -497,6 +530,7 @@ export const RULES: readonly Rule[] = [
   lowContrast,
   narrowMargins,
   tooLong,
+  multiColumn,
 ];
 
 // ---------------------------------------------------------------------------

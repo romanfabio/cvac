@@ -1,34 +1,63 @@
 import { formatDate, formatRange } from "../i18n/dates.ts";
 import { type Labels, labelsFor } from "../i18n/labels.ts";
+import type { ImageInfo } from "../images.ts";
 import type { ResolvedContent } from "../resolve/locale.ts";
 import type { FontSpec, ResolvedTheme } from "../theme/resolve.ts";
-import type { Block, BlockRole, Group, LayoutDocument, Paragraph, Run, TextStyle } from "./ir.ts";
+import type {
+  Block,
+  BlockRole,
+  Group,
+  LayoutDocument,
+  Paragraph,
+  PhotoBox,
+  Run,
+  TextStyle,
+} from "./ir.ts";
 
 type Section = ResolvedContent["sections"][number];
 type Highlight = string | { text: string; tags?: string[] | undefined };
 
 const SEP = " · ";
 
+type Region = "header" | "main" | "sidebar";
+
+export interface BuildLayoutOptions {
+  /** Ignore the theme's columns: one column in CV order (used for DOCX). */
+  linear?: boolean;
+  /** Photo bytes and their probed format/size. */
+  photo?: { data: Uint8Array; info: ImageInfo };
+}
+
 /**
- * Build the default single-column layout. Order of blocks is the semantic
- * reading order, which is what ATS parsers extract.
+ * Build the layout. Blocks go into regions (header, main, sidebar); within
+ * each region they keep the CV's order. `blocks` lists them in reading
+ * order (header, main, sidebar), which is what ATS parsers should extract.
  */
 export function buildLayout(
   content: ResolvedContent,
   theme: ResolvedTheme,
   locale: string,
+  opts: BuildLayoutOptions = {},
 ): LayoutDocument {
   const b = new Builder(theme, labelsFor(locale));
   const basics = content.basics;
+  const columns = theme.layout.type === "sidebar" && !opts.linear ? theme.layout : undefined;
+  const regionOf = (id: string): Region => (columns?.sidebar.includes(id) ? "sidebar" : "main");
 
+  b.region = "header";
   b.header(content);
   if (basics.summary) {
+    b.region = regionOf("summary");
     b.sectionHeading(b.labels.sections.summary);
     for (const p of paragraphs(basics.summary)) b.push(b.body(p));
   }
-  for (const s of content.sections) b.section(s);
+  for (const s of content.sections) {
+    b.region = regionOf(s.id ?? s.type);
+    b.section(s);
+  }
 
-  return {
+  const reading = [...b.buckets.header, ...b.buckets.main, ...b.buckets.sidebar];
+  const doc: LayoutDocument = {
     meta: {
       title: basics.title ? `${basics.name} – ${basics.title}` : `${basics.name} – ${b.labels.cv}`,
       author: basics.name,
@@ -37,12 +66,41 @@ export function buildLayout(
       keywords: keywordsOf(content),
     },
     page: theme.page,
-    blocks: b.blocks,
+    blocks: reading,
   };
+  doc.regions = { header: b.buckets.header, main: b.buckets.main, sidebar: b.buckets.sidebar };
+  if (columns) {
+    doc.regions.columns = {
+      side: columns.side,
+      sidebarWidth: columns.width,
+      gap: columns.gap,
+      headerSpan: columns.header,
+      ...(theme.colors.sidebarBackground
+        ? { sidebarBackground: theme.colors.sidebarBackground }
+        : {}),
+    };
+  }
+  if (opts.photo && theme.photo.show) {
+    const photo: PhotoBox = {
+      data: opts.photo.data,
+      format: opts.photo.info.format,
+      pixelWidth: opts.photo.info.width,
+      pixelHeight: opts.photo.info.height,
+      size: theme.photo.size,
+      shape: theme.photo.shape,
+      // Linear documents have no sidebar to put it in.
+      position:
+        theme.photo.position === "sidebar" && !columns ? "header-right" : theme.photo.position,
+      alt: basics.name,
+    };
+    doc.photo = photo;
+  }
+  return doc;
 }
 
 class Builder {
-  readonly blocks: Block[] = [];
+  readonly buckets: Record<Region, Block[]> = { header: [], main: [], sidebar: [] };
+  region: Region = "main";
   readonly theme: ResolvedTheme;
   readonly labels: Labels;
   constructor(theme: ResolvedTheme, labels: Labels) {
@@ -51,7 +109,12 @@ class Builder {
   }
 
   push(block: Block) {
-    this.blocks.push(block);
+    this.buckets[this.region].push(block);
+  }
+
+  /** The sidebar is narrow: dates get their own line instead of an aside. */
+  get narrow() {
+    return this.region === "sidebar";
   }
 
   style(font: FontSpec, over: Partial<TextStyle> = {}): TextStyle {
@@ -175,9 +238,12 @@ class Builder {
         headingLevel: 3,
         spaceBefore: e.first ? 0 : this.theme.spacing.item,
         keepWithNext: true,
-        ...(e.dates ? { aside: [{ text: e.dates, style: this.mutedStyle }] } : {}),
+        ...(e.dates && !this.narrow ? { aside: [{ text: e.dates, style: this.mutedStyle }] } : {}),
       }),
     );
+    if (e.dates && this.narrow) {
+      blocks.push(this.para("item-subtitle", [{ text: e.dates, style: this.mutedStyle }]));
+    }
     if (e.subtitle) {
       blocks.push(
         this.para(

@@ -5,6 +5,7 @@ import type {
   BlockRole,
   LayoutDocument,
   Paragraph,
+  PhotoBox,
   Run,
   TextStyle,
 } from "../../layout/ir.ts";
@@ -38,17 +39,50 @@ export interface RuleItem {
   thickness: number;
 }
 
-export type DrawItem = TextItem | RuleItem;
+/** Filled rectangle (sidebar background). `y` is the top edge. */
+export interface RectItem {
+  type: "rect";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+}
+
+/** The photo, `size` x `size` points, `x`/`y` its top-left corner. */
+export interface ImageItem {
+  type: "image";
+  x: number;
+  y: number;
+  photo: PhotoBox;
+}
+
+export type DrawItem = TextItem | RuleItem | RectItem | ImageItem;
 
 export interface TypesetPage {
   items: DrawItem[];
 }
 
 const ASIDE_GAP = 8;
+/** Space between the photo and the text next to or below it. */
+const PHOTO_GAP = 12;
+
+/**
+ * Items are collected per layer and emitted in this order on each page:
+ * backgrounds first (painted behind), then text in reading order. PDF text
+ * extractors that follow the content stream (pdf.js, many ATS) therefore read
+ * the header, then the main column, then the sidebar, never interleaved.
+ */
+const LAYERS = ["background", "header", "photo", "main", "sidebar"] as const;
+type Layer = (typeof LAYERS)[number];
+type PageLayers = Record<Layer, DrawItem[]>;
 const BULLET_GAP = 4;
 /** Minimum lines kept together at the start/end of a split paragraph. */
 const ORPHANS = 2;
 const EPS = 0.001;
+
+/** Horizontal extent [left, right] of a flow, in points. */
+type Frame = [number, number];
 
 interface Piece {
   text: string;
@@ -85,11 +119,13 @@ export function typeset(doc: LayoutDocument, m: Measurer): TypesetPage[] {
 }
 
 class Typesetter {
-  private pages: TypesetPage[] = [];
-  private page!: TypesetPage;
+  private pages: PageLayers[] = [];
+  private pageIdx = 0;
+  private layer: Layer = "main";
   private y = 0;
-  private readonly left: number;
-  private readonly right: number;
+  /** Current frame (x-range of the flow being placed). */
+  private left = 0;
+  private right = 0;
   private readonly top: number;
   private readonly bottom: number;
 
@@ -99,23 +135,105 @@ class Typesetter {
   constructor(doc: LayoutDocument, m: Measurer) {
     this.doc = doc;
     this.m = m;
-    const { width, height, margins } = doc.page;
-    this.left = margins.left;
-    this.right = width - margins.right;
+    const { height, margins } = doc.page;
     this.top = margins.top;
     this.bottom = height - margins.bottom;
   }
 
   run(): TypesetPage[] {
-    this.newPage();
-    const flat = this.doc.blocks;
-    for (let i = 0; i < flat.length; i++) this.placeBlock(flat[i] as Block, flat[i + 1]);
-    return this.pages;
+    const { width, height, margins } = this.doc.page;
+    const L = margins.left;
+    const R = width - margins.right;
+    const regions = this.doc.regions ?? { header: [], main: this.doc.blocks, sidebar: [] };
+    const cols = regions.columns;
+    const photo = this.doc.photo;
+
+    let main: Frame = [L, R];
+    let side: Frame | undefined;
+    let head: Frame = [L, R];
+    if (cols) {
+      side = cols.side === "left" ? [L, L + cols.sidebarWidth] : [R - cols.sidebarWidth, R];
+      main =
+        cols.side === "left"
+          ? [L + cols.sidebarWidth + cols.gap, R]
+          : [L, R - cols.sidebarWidth - cols.gap];
+      if (cols.headerSpan === "main") head = main;
+    }
+
+    // Header, with the photo beside it when placed there.
+    this.ensurePage(0);
+    const besideHeader = photo && photo.position !== "sidebar" ? photo : undefined;
+    let textHead: Frame = head;
+    if (besideHeader) {
+      const w = besideHeader.size + PHOTO_GAP;
+      textHead =
+        besideHeader.position === "header-right" ? [head[0], head[1] - w] : [head[0] + w, head[1]];
+      const x = besideHeader.position === "header-right" ? head[1] - besideHeader.size : head[0];
+      this.at(0).photo.push({ type: "image", x, y: this.top, photo: besideHeader });
+    }
+    let headerEnd = this.flow("header", regions.header, textHead, this.top);
+    if (besideHeader) headerEnd = Math.max(headerEnd, this.top + besideHeader.size);
+
+    if (!cols || !side) {
+      this.flow("main", regions.main, main, headerEnd);
+    } else {
+      this.flow("main", regions.main, main, headerEnd);
+      let sideTop = cols.headerSpan === "full" ? headerEnd : this.top;
+      if (photo?.position === "sidebar") {
+        const x = side[0] + (side[1] - side[0] - photo.size) / 2;
+        this.at(0).photo.push({ type: "image", x, y: sideTop, photo });
+        sideTop += photo.size + PHOTO_GAP;
+      }
+      this.flow("sidebar", regions.sidebar, side, sideTop);
+
+      // Tinted sidebar, bled to the page edge, on every page.
+      if (cols.sidebarBackground) {
+        const x0 = cols.side === "left" ? 0 : side[0] - cols.gap / 2;
+        const x1 = cols.side === "left" ? side[1] + cols.gap / 2 : width;
+        this.pages.forEach((pg, i) => {
+          const y0 = i === 0 && cols.headerSpan === "full" ? headerEnd : 0;
+          pg.background.push({
+            type: "rect",
+            x: x0,
+            y: y0,
+            width: x1 - x0,
+            height: height - y0,
+            color: cols.sidebarBackground as string,
+          });
+        });
+      }
+    }
+    return this.pages.map((pg) => ({ items: LAYERS.flatMap((l) => pg[l]) }));
+  }
+
+  /** Place blocks in a frame starting at `startY` on the first page; returns the end y. */
+  private flow(layer: Layer, blocks: Block[], frame: Frame, startY: number): number {
+    this.layer = layer;
+    [this.left, this.right] = frame;
+    this.pageIdx = 0;
+    this.y = startY;
+    for (let i = 0; i < blocks.length; i++) this.placeBlock(blocks[i] as Block, blocks[i + 1]);
+    return this.y;
+  }
+
+  private at(i: number): PageLayers {
+    this.ensurePage(i);
+    return this.pages[i] as PageLayers;
+  }
+
+  private ensurePage(i: number) {
+    while (this.pages.length <= i) {
+      this.pages.push({ background: [], header: [], photo: [], main: [], sidebar: [] });
+    }
+  }
+
+  private emit(item: DrawItem) {
+    this.at(this.pageIdx)[this.layer].push(item);
   }
 
   private newPage() {
-    this.page = { items: [] };
-    this.pages.push(this.page);
+    this.pageIdx++;
+    this.ensurePage(this.pageIdx);
     this.y = this.top;
   }
 
@@ -229,7 +347,7 @@ class Typesetter {
     if (p.ruleBelow) {
       const r = p.ruleBelow;
       this.y += r.gap;
-      this.page.items.push({
+      this.emit({
         type: "rule",
         x1: this.left + p.indent,
         x2: this.right,
@@ -283,7 +401,7 @@ class Typesetter {
     if (!text) return;
     const item: TextItem = { type: "text", x, y, text, style, role };
     if (link) item.link = link;
-    this.page.items.push(item);
+    this.emit(item);
   }
 
   // ---- line breaking -------------------------------------------------------

@@ -4,7 +4,8 @@ import { strFromU8, unzipSync } from "fflate";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { describe, expect, it } from "vitest";
 import { loadBundledFonts } from "../../fonts/src/index.ts";
-import { buildDocx, buildPdf, layout, parseContent } from "../src/index.ts";
+import { buildDocx, buildPdf, layout } from "../src/index.ts";
+import { fixtureOptions, loadFixture } from "./fixtures.ts";
 
 /**
  * ATS guarantee: every piece of text in the layout is recoverable from the
@@ -19,22 +20,22 @@ const CASES: [string, string][] = [
   ["long", "en"],
   ["variants:backend", "en"],
   ["variants:lead", "it"],
+  ["sidebar", "en"],
 ];
 const fonts = loadBundledFonts();
 const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 
-function load(name: string) {
-  const r = parseContent(
-    readFileSync(join(FIXTURES, name.split(":")[0] as string, "cv.yaml"), "utf8"),
-  );
-  if (!r.value) throw new Error(JSON.stringify(r.diagnostics));
-  return r.value;
-}
-
-/** Text runs in reading order (runs, then the right-aligned aside). */
-function expectedRuns(name: string, locale: string): string[] {
-  const variant = name.split(":")[1];
-  const l = layout(load(name), { locale, ...(variant ? { variant } : {}) }).layout;
+/**
+ * Text runs in reading order (runs, then the right-aligned aside). The PDF
+ * reads header, main, sidebar; the DOCX is linear, in CV order.
+ */
+function expectedRuns(name: string, locale: string, linear = false): string[] {
+  const f = loadFixture(name);
+  const l = layout(f.content, {
+    locale,
+    ...fixtureOptions(f),
+    ...(linear ? { linear } : {}),
+  }).layout;
   if (!l) throw new Error("layout failed");
   return l.blocks
     .flatMap((b) => (b.kind === "group" ? b.blocks : [b]))
@@ -87,15 +88,15 @@ describe("text round-trip", () => {
     it(`${name}.${locale}: all text survives in the PDF and the DOCX`, async () => {
       const runs = expectedRuns(name, locale);
       expect(runs.length).toBeGreaterThan(10);
-      const content = load(name);
-      const variant = name.split(":")[1];
-      const opts = { fonts, locale, ...(variant ? { variant } : {}) };
+      const f = loadFixture(name);
+      const opts = { fonts, locale, ...fixtureOptions(f) };
 
-      const pdf = await buildPdf(content, opts);
+      const pdf = await buildPdf(f.content, opts);
       expectInOrder(await pdfText(pdf.pdf as Uint8Array), runs, `${name}.${locale}.pdf`);
 
-      const docx = await buildDocx(content, opts);
-      expectInOrder(docxText(docx.docx as Uint8Array), runs, `${name}.${locale}.docx`);
+      const docx = await buildDocx(f.content, opts);
+      const linearRuns = expectedRuns(name, locale, true);
+      expectInOrder(docxText(docx.docx as Uint8Array), linearRuns, `${name}.${locale}.docx`);
     });
   }
 });

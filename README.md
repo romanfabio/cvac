@@ -7,7 +7,7 @@ Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** o
 - **ATS-aware.** Layout is free, and a linter (on by default) warns about choices that hurt HR scanners.
 - **Variants and languages.** Tag sections, items or bullets to build tailored variants. Write text as `{ en: ..., it: ... }`.
 
-> Status: early development. Model, parsing, PDF/DOCX rendering, the `cvac` CLI, the ATS linter and variants work (M1–M6). Advanced themes and the web editor are next.
+> Status: early development. Model, parsing, PDF/DOCX rendering, the `cvac` CLI, the ATS linter, variants and themes with sidebar layouts and photos work (M1–M7). The web editor is next.
 
 ## Packages
 
@@ -39,6 +39,34 @@ cvac lint --lang en,it --strict    # validation + ATS linter, fail on warnings (
 Exit codes: `0` ok, `1` problems in your files, `2` bad usage.
 
 In this repo, run the CLI from source with `npm run cvac -- build ...`.
+
+## Themes
+
+A theme only lists what it changes from its base:
+
+```yaml
+extends: sidebar # built-ins: default (one column), sidebar; or a file: ./base.yaml
+layout:
+  side: right
+  width: 30%
+  sidebar: [summary, skills, languages] # section ids (default: the type); the rest go in main
+photo: { position: sidebar, size: 28mm, shape: circle } # or header-right, header-left
+tokens:
+  colors: { accent: "#7a1f3d", sidebarBackground: "#f4eef1" }
+```
+
+How themes combine:
+- Objects merge key by key.
+- Lists and single values replace the base's value.
+- Theme files can extend other theme files; paths are relative to each file.
+
+The photo path in `basics.photo` is relative to the CV file. It is
+cover-cropped to a square, circle or rounded shape in both the PDF and the
+DOCX.
+
+The PDF follows the layout. The DOCX is always one column, in CV order,
+because ATS portals read Word files as linear text. The linter's
+`multi-column` warning reminds you of this when you use a sidebar.
 
 ## Variants
 

@@ -4,6 +4,7 @@ import {
   type Content,
   type Diagnostic,
   locateDiagnostics,
+  mergeThemes,
   parseContent,
   parseTheme,
   type Theme,
@@ -23,6 +24,10 @@ export interface Inputs {
   /** Display names (relative to cwd) used in diagnostics. */
   cvName: string;
   themeName?: string;
+  /** Files the CV refers to (the photo), keyed as written in the CV. */
+  assets: Record<string, Uint8Array>;
+  /** Every file the build depends on (for watch mode). */
+  files: string[];
 }
 
 /** Path as shown to the user: relative to the working directory. */
@@ -43,7 +48,7 @@ export function loadInputs(
   const cvName = displayName(cvPath, cwd);
   const sources = new Map<string, string>();
   const diagnostics: Diagnostic[] = [];
-  const inputs: Inputs = { cvPath, cvName, sources, diagnostics };
+  const inputs: Inputs = { cvPath, cvName, sources, diagnostics, assets: {}, files: [cvPath] };
 
   const cvSource = readSource(cvPath, cvName, "content", diagnostics);
   if (cvSource !== undefined) {
@@ -51,6 +56,18 @@ export function loadInputs(
     const r = parseContent(cvSource, { file: cvName });
     diagnostics.push(...r.diagnostics);
     if (r.value) inputs.content = r.value;
+    // The photo, relative to the CV. When missing, core reports a located
+    // photo-not-found error.
+    const photo = r.value?.basics.photo;
+    if (photo) {
+      const photoPath = resolve(dirname(cvPath), photo);
+      inputs.files.push(photoPath);
+      try {
+        inputs.assets[photo] = new Uint8Array(readFileSync(photoPath));
+      } catch {
+        // reported by core
+      }
+    }
   }
 
   const sibling = join(dirname(cvPath), DEFAULT_THEME);
@@ -60,15 +77,51 @@ export function loadInputs(
     const themeName = displayName(themePath, cwd);
     inputs.themePath = themePath;
     inputs.themeName = themeName;
-    const themeSource = readSource(themePath, themeName, "theme", diagnostics);
-    if (themeSource !== undefined) {
-      sources.set(themeName, themeSource);
-      const r = parseTheme(themeSource, { file: themeName });
-      diagnostics.push(...r.diagnostics);
-      if (r.value) inputs.theme = r.value;
-    }
+    const theme = loadThemeChain(themePath, cwd, inputs);
+    if (theme) inputs.theme = theme;
   }
   return inputs;
+}
+
+/** `extends` values that point at a file rather than a built-in theme. */
+const isFileRef = (ref: string) => /^\.{1,2}[\\/]|\.ya?ml$/i.test(ref);
+
+/**
+ * Read a theme and the theme files it extends (relative to each file),
+ * merging them into one theme whose `extends` is a built-in name or unset.
+ */
+function loadThemeChain(path: string, cwd: string, inputs: Inputs): Theme | undefined {
+  const chain: Theme[] = [];
+  const seen = new Set<string>();
+  let current: string | undefined = path;
+  while (current) {
+    const name = displayName(current, cwd);
+    if (seen.has(current)) {
+      inputs.diagnostics.push({
+        code: "theme-cycle",
+        severity: "error",
+        message: `Theme ${name} is extended twice in the same chain`,
+        origin: "theme",
+      });
+      return undefined;
+    }
+    seen.add(current);
+    inputs.files.push(current);
+    const source = readSource(current, name, "theme", inputs.diagnostics);
+    if (source === undefined) return undefined;
+    inputs.sources.set(name, source);
+    const r = parseTheme(source, { file: name });
+    inputs.diagnostics.push(...r.diagnostics);
+    if (!r.value) return undefined;
+    chain.unshift(r.value);
+    const ext = r.value.extends;
+    current = ext && isFileRef(ext) ? resolve(dirname(current), ext) : undefined;
+  }
+  // Base first, then each override on top. Overrides' `extends` name files;
+  // the result keeps the base's (a built-in name, or none) for core.
+  const [base, ...overrides] = chain as [Theme, ...Theme[]];
+  const { extends: _fileRef, ...merged } = overrides.reduce(mergeThemes, base);
+  return base.extends !== undefined ? { ...merged, extends: base.extends } : merged;
 }
 
 function readSource(

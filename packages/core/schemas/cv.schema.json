@@ -163,6 +163,15 @@
                 "warning",
                 "error"
               ]
+            },
+            "multi-column": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
             }
           },
           "additionalProperties": false,

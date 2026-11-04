@@ -118,7 +118,8 @@ describe("parseTheme", () => {
       "extends: default\npage: { size: Letter }\ntokens:\n  colors: { accent: '#0055aa' }\n",
     );
     expect(r.diagnostics).toEqual([]);
-    expect(r.value?.page).toEqual({ size: "Letter", margins: "18mm" });
+    // Defaults are applied when resolving (so they never override a base theme).
+    expect(r.value?.page).toEqual({ size: "Letter" });
   });
 
   it("rejects invalid lengths and colors", () => {

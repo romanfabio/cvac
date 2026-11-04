@@ -1,8 +1,9 @@
 import { z } from "zod";
 
 /**
- * Theme schema (v1 subset). Page setup and design tokens only; the declarative
- * layout tree and per-section style rules arrive with the layout engine (M2/M7).
+ * Theme schema. Every field is optional: a theme is a set of overrides
+ * layered over its base (`extends`, ultimately the built-in default theme),
+ * so defaults live in the resolver, not here.
  */
 
 /** Length in points (number) or with a unit: `12pt`, `2cm`, `20mm`, `1in`. */
@@ -22,13 +23,16 @@ export const Margins = z.union([
   z.strictObject({ top: Length, right: Length, bottom: Length, left: Length }),
 ]);
 
+/** A share of the content width, e.g. `32%`. */
+export const Percent = z.string().regex(/^\d+(\.\d+)?%$/, "Expected a percentage like 32%");
+
 export const Page = z.strictObject({
-  size: z.enum(["A4", "Letter"]).default("A4"),
-  margins: Margins.default("18mm"),
+  size: z.enum(["A4", "Letter"]).optional().describe("Default A4"),
+  margins: Margins.optional().describe("Default 18mm"),
 });
 
 export const FontRef = z.strictObject({
-  family: z.string().min(1).describe("A bundled font family, e.g. Inter"),
+  family: z.string().min(1).optional().describe("A bundled font family, e.g. Source Sans 3"),
   size: Length.optional(),
   weight: z
     .union([z.literal("regular"), z.literal("bold"), z.number().int().min(100).max(900)])
@@ -49,6 +53,7 @@ export const Tokens = z.strictObject({
       text: Color.optional(),
       muted: Color.optional(),
       accent: Color.optional(),
+      sidebarBackground: Color.optional().describe("Fill behind the sidebar (sidebar layouts)"),
     })
     .optional(),
   spacing: z
@@ -64,12 +69,45 @@ export const Format = z.strictObject({
   date: z.enum(["MMM YYYY", "MMMM YYYY", "MM/YYYY", "YYYY"]).optional(),
 });
 
+/**
+ * Page regions. `single`: one column. `sidebar`: a header, then a main
+ * column and a sidebar; the theme says which section ids go in the sidebar,
+ * everything else goes in the main column, each in CV order. Section ids
+ * default to the section type; the summary is `summary`.
+ */
+export const Layout = z.strictObject({
+  type: z.enum(["single", "sidebar"]).optional().describe("Default single"),
+  side: z.enum(["left", "right"]).optional().describe("Sidebar side (default left)"),
+  width: z.union([Percent, Length]).optional().describe("Sidebar width (default 32%)"),
+  gap: Length.optional().describe("Space between the columns (default 8mm)"),
+  header: z
+    .enum(["full", "main"])
+    .optional()
+    .describe("Header across the page (full, default) or only above the main column"),
+  sidebar: z.array(z.string().min(1)).optional().describe("Section ids placed in the sidebar"),
+});
+
+export const Photo = z.strictObject({
+  show: z.boolean().optional().describe("Default true when the CV has basics.photo"),
+  position: z
+    .enum(["header-right", "header-left", "sidebar"])
+    .optional()
+    .describe("Default header-right (sidebar layouts: sidebar)"),
+  size: Length.optional().describe("Width and height (default 28mm)"),
+  shape: z.enum(["square", "rounded", "circle"]).optional().describe("Default circle"),
+});
+
 export const Theme = z.strictObject({
   $schema: z.string().optional(),
   version: z.literal(1).optional(),
   name: z.string().optional(),
-  extends: z.string().optional().describe("Theme to inherit from, e.g. 'default'"),
+  extends: z
+    .string()
+    .optional()
+    .describe("Theme to build on: a built-in (default, sidebar) or a file like ./base.yaml"),
   page: Page.optional(),
+  layout: Layout.optional(),
+  photo: Photo.optional(),
   tokens: Tokens.optional(),
   format: Format.optional(),
 });

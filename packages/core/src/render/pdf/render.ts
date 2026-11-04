@@ -1,7 +1,7 @@
 import PDFDocument from "pdfkit";
 import type { Diagnostic } from "../../diagnostics.ts";
 import { type FontFace, type FontSet, faceKey, selectFace } from "../../fonts.ts";
-import type { LayoutDocument, TextStyle } from "../../layout/ir.ts";
+import type { LayoutDocument, PhotoBox, TextStyle } from "../../layout/ir.ts";
 import { type Measurer, type TypesetPage, typeset } from "./typeset.ts";
 
 export interface PdfOptions {
@@ -135,6 +135,14 @@ function draw(
           .restore();
         continue;
       }
+      if (item.type === "rect") {
+        doc.save().rect(item.x, item.y, item.width, item.height).fill(item.color).restore();
+        continue;
+      }
+      if (item.type === "image") {
+        drawPhoto(doc, item.x, item.y, item.photo);
+        continue;
+      }
       use(item.style);
       doc.fillColor(item.style.color).text(item.text, item.x, item.y, {
         lineBreak: false,
@@ -143,6 +151,28 @@ function draw(
       });
     }
   }
+}
+
+/** Crop to fill a square ("cover"), clipped to the photo's shape. */
+function drawPhoto(doc: PDFKit.PDFDocument, x: number, y: number, photo: PhotoBox) {
+  const size = photo.size;
+  const scale = Math.max(size / photo.pixelWidth, size / photo.pixelHeight);
+  const w = photo.pixelWidth * scale;
+  const h = photo.pixelHeight * scale;
+  doc.save();
+  if (photo.shape === "circle") doc.circle(x + size / 2, y + size / 2, size / 2).clip();
+  else if (photo.shape === "rounded") doc.roundedRect(x, y, size, size, size * 0.12).clip();
+  else doc.rect(x, y, size, size).clip();
+  // An ArrayBuffer (not a Uint8Array, which pdfkit would take for a path).
+  const bytes = photo.data.buffer.slice(
+    photo.data.byteOffset,
+    photo.data.byteOffset + photo.data.byteLength,
+  ) as ArrayBuffer;
+  doc.image(bytes as unknown as Buffer, x - (w - size) / 2, y - (h - size) / 2, {
+    width: w,
+    height: h,
+  });
+  doc.restore();
 }
 
 function fontMetrics(doc: PDFKit.PDFDocument): { ascender: number; descender: number } {

@@ -70,7 +70,8 @@ sections:
 `;
 
 export const STARTER_THEME = `# yaml-language-server: $schema=./${SCHEMA_DIR}/theme.schema.json
-# Layered over the built-in default theme: set only what you want to change.
+# Layered over a base theme: set only what you want to change.
+# Built-in bases: default (one column) and sidebar. A file works too: ./base.yaml
 version: 1
 extends: default
 
@@ -85,6 +86,16 @@ tokens:
   #   body: { family: Source Sans 3, size: 10pt }
   # spacing:
   #   section: 12pt
+
+# A sidebar layout (the DOCX always stays one column, for ATS):
+# layout:
+#   type: sidebar
+#   side: left
+#   width: 32%
+#   sidebar: [summary, skills, languages]
+
+# The photo (when the CV has basics.photo):
+# photo: { position: header-right, size: 28mm, shape: circle }
 `;
 
 export interface InitFlags {

@@ -1,5 +1,6 @@
 import { type Diagnostic, hasErrors } from "./diagnostics.ts";
 import type { FontSet } from "./fonts.ts";
+import { type ImageInfo, probeImage } from "./images.ts";
 import { buildLayout } from "./layout/build.ts";
 import type { LayoutDocument } from "./layout/ir.ts";
 import type { Content } from "./model/content.ts";
@@ -17,6 +18,13 @@ export interface LayoutOptions {
   locale?: string;
   /** User theme layered over the built-in default theme. */
   theme?: Theme;
+  /**
+   * Files the CV refers to (the photo), keyed by the path as written in
+   * the CV. Core reads no files; the CLI or the web editor provides them.
+   */
+  assets?: Readonly<Record<string, Uint8Array>>;
+  /** One column in CV order, ignoring the theme's sidebar (used for DOCX). */
+  linear?: boolean;
 }
 
 export interface LayoutResult {
@@ -31,8 +39,49 @@ export function layout(content: Content, opts: LayoutOptions = {}): LayoutResult
   const loc = resolveLocale(v.content, opts.locale);
   const th = resolveTheme(opts.theme);
   const diagnostics = [...th.diagnostics, ...mapDiagnostics(loc.diagnostics, v)];
+  const photo = th.theme.photo.show
+    ? loadPhoto(content.basics.photo, opts.assets, diagnostics)
+    : undefined;
   if (hasErrors(diagnostics)) return { diagnostics };
-  return { layout: buildLayout(loc.content, th.theme, loc.locale), diagnostics };
+  return {
+    layout: buildLayout(loc.content, th.theme, loc.locale, {
+      ...(opts.linear ? { linear: true } : {}),
+      ...(photo ? { photo } : {}),
+    }),
+    diagnostics,
+  };
+}
+
+function loadPhoto(
+  path: string | undefined,
+  assets: LayoutOptions["assets"],
+  diagnostics: Diagnostic[],
+): { data: Uint8Array; info: ImageInfo } | undefined {
+  if (!path) return undefined;
+  const at = { path: ["basics", "photo"], origin: "content" as const };
+  const data = assets?.[path];
+  if (!data) {
+    diagnostics.push({
+      code: "photo-not-found",
+      severity: "error",
+      message: `Cannot find the photo '${path}'`,
+      help: "Paths are relative to the CV file. Remove basics.photo, or set photo: { show: false } in the theme",
+      ...at,
+    });
+    return undefined;
+  }
+  const info = probeImage(data);
+  if (!info) {
+    diagnostics.push({
+      code: "photo-format",
+      severity: "error",
+      message: `'${path}' is not a PNG or JPEG image`,
+      help: "Convert the photo to JPEG or PNG",
+      ...at,
+    });
+    return undefined;
+  }
+  return { data, info };
 }
 
 export interface BuildPdfOptions extends LayoutOptions {
@@ -71,12 +120,15 @@ export interface BuildDocxResult {
   diagnostics: Diagnostic[];
 }
 
-/** Parsed content -> DOCX bytes (same layout as the PDF, paginated by Word). */
+/**
+ * Parsed content -> DOCX bytes. Always one column in CV order, whatever the
+ * theme's layout: Word has no reliable sidebar, and ATS read DOCX linearly.
+ */
 export async function buildDocx(
   content: Content,
   opts: BuildDocxOptions = {},
 ): Promise<BuildDocxResult> {
-  const l = layout(content, opts);
+  const l = layout(content, { ...opts, linear: true });
   if (!l.layout) return { diagnostics: l.diagnostics };
   const r = await renderDocx(l.layout, {
     ...(opts.date ? { date: opts.date } : {}),

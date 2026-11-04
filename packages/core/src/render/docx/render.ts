@@ -3,6 +3,9 @@ import {
   BorderStyle,
   Document,
   ExternalHyperlink,
+  HorizontalPositionAlign,
+  HorizontalPositionRelativeFrom,
+  ImageRun,
   LevelFormat,
   LineRuleType,
   Packer,
@@ -11,6 +14,9 @@ import {
   Tab,
   TabStopType,
   TextRun,
+  TextWrappingSide,
+  TextWrappingType,
+  VerticalPositionRelativeFrom,
 } from "docx";
 import type { Diagnostic } from "../../diagnostics.ts";
 import type { FontSet } from "../../fonts.ts";
@@ -18,12 +24,13 @@ import type {
   BlockRole,
   Paragraph as IrParagraph,
   LayoutDocument,
+  PhotoBox,
   Run,
   TextStyle,
 } from "../../layout/ir.ts";
 import { DEFAULT_DOCUMENT_DATE } from "../pdf/render.ts";
 import { describeFonts } from "./fonts.ts";
-import { normalizeDocx } from "./normalize.ts";
+import { normalizeDocx, type PhotoCrop } from "./normalize.ts";
 
 export interface DocxOptions {
   /** Creation/modification date written into the file (fixed by default). */
@@ -71,9 +78,12 @@ export async function renderDocx(
   const paragraphs = layout.blocks.flatMap((b) => (b.kind === "group" ? b.blocks : [b]));
 
   const children: Paragraph[] = [];
+  let photoRun: ImageRun | undefined = layout.photo ? photoImage(layout.photo) : undefined;
   for (const b of layout.blocks) {
     if (b.kind === "paragraph") {
-      children.push(paragraph(b, contentWidth, false));
+      // The photo floats beside the first paragraph (the name).
+      children.push(paragraph(b, contentWidth, false, false, photoRun));
+      photoRun = undefined;
     } else {
       b.blocks.forEach((p, i) => {
         // keep-together group: chain keep-with-next through the entry.
@@ -172,7 +182,12 @@ export async function renderDocx(
 
   const packed = await Packer.toBuffer(doc);
   return {
-    docx: normalizeDocx(new Uint8Array(packed), opts.date ?? DEFAULT_DOCUMENT_DATE, fonts),
+    docx: normalizeDocx(
+      new Uint8Array(packed),
+      opts.date ?? DEFAULT_DOCUMENT_DATE,
+      fonts,
+      layout.photo ? photoCrop(layout.photo) : undefined,
+    ),
     diagnostics,
   };
 }
@@ -188,8 +203,9 @@ function paragraph(
   contentWidth: number,
   keepNext: boolean,
   keepLines = false,
+  lead?: ParagraphChild,
 ): Paragraph {
-  const kids: ParagraphChild[] = p.runs.map(run);
+  const kids: ParagraphChild[] = [...(lead ? [lead] : []), ...p.runs.map(run)];
   if (p.aside?.length) {
     kids.push(new TextRun({ children: [new Tab()], ...runProps((p.aside[0] as Run).style) }));
     kids.push(...p.aside.map(run));
@@ -232,6 +248,53 @@ function paragraph(
         }
       : {}),
   });
+}
+
+/** Points to EMU (English Metric Units: 12700 per point). */
+const emu = (pt: number) => Math.round(pt * 12700);
+
+/**
+ * The photo as a floating image at the top corner of the margin box, with
+ * text wrapping around it. Its drawing id is fixed: the docx library would
+ * otherwise draw one from a process-wide counter (not reproducible).
+ */
+function photoImage(photo: PhotoBox): ImageRun {
+  const px = Math.round((photo.size * 96) / 72);
+  const left = photo.position === "header-left";
+  return new ImageRun({
+    type: photo.format === "png" ? "png" : "jpg",
+    data: photo.data,
+    transformation: { width: px, height: px },
+    floating: {
+      horizontalPosition: {
+        relative: HorizontalPositionRelativeFrom.MARGIN,
+        align: left ? HorizontalPositionAlign.LEFT : HorizontalPositionAlign.RIGHT,
+      },
+      verticalPosition: { relative: VerticalPositionRelativeFrom.PARAGRAPH, offset: 0 },
+      wrap: {
+        type: TextWrappingType.SQUARE,
+        side: left ? TextWrappingSide.RIGHT : TextWrappingSide.LEFT,
+      },
+      margins: { left: left ? 0 : emu(12), right: left ? emu(12) : 0, top: 0, bottom: 0 },
+    },
+    altText: { id: "1", name: "Photo", description: photo.alt, title: photo.alt },
+  });
+}
+
+/** Cover crop (in 1/1000 of a percent per side) and mask shape for the normalizer. */
+function photoCrop(photo: PhotoBox): PhotoCrop {
+  const aspect = photo.pixelWidth / photo.pixelHeight;
+  const side = (visible: number) => Math.round(((1 - visible) / 2) * 100_000);
+  const lr = aspect > 1 ? side(1 / aspect) : 0;
+  const tb = aspect < 1 ? side(aspect) : 0;
+  return {
+    left: lr,
+    right: lr,
+    top: tb,
+    bottom: tb,
+    geometry:
+      photo.shape === "circle" ? "ellipse" : photo.shape === "rounded" ? "roundRect" : "rect",
+  };
 }
 
 function run(r: Run): ParagraphChild {

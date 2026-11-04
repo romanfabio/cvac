@@ -168,6 +168,7 @@ export async function build(cv: string | undefined, flags: BuildFlags): Promise<
   const targets = planTargets(inputs.cvPath, formats, langs, flags.out, variants);
   const common = {
     ...(inputs.theme ? { theme: inputs.theme } : {}),
+    assets: inputs.assets,
     ...(date ? { date } : {}),
     fonts,
   };

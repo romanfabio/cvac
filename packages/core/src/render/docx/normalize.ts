@@ -17,7 +17,22 @@ import { applyFonts, type DocxFont } from "./fonts.ts";
  * constructor from the UTC fields: the bytes are then the same in every
  * time zone.
  */
-export function normalizeDocx(bytes: Uint8Array, date: Date, fonts: DocxFont[] = []): Uint8Array {
+/** Crop and mask for the (single) photo, applied to its DrawingML. */
+export interface PhotoCrop {
+  /** Per side, in 1/1000 of a percent (DrawingML units). */
+  left: number;
+  right: number;
+  top: number;
+  bottom: number;
+  geometry: "rect" | "ellipse" | "roundRect";
+}
+
+export function normalizeDocx(
+  bytes: Uint8Array,
+  date: Date,
+  fonts: DocxFont[] = [],
+  photo?: PhotoCrop,
+): Uint8Array {
   const files = unzipSync(bytes);
   const names = Object.keys(files);
   const text = new Map<string, string>();
@@ -55,6 +70,19 @@ export function normalizeDocx(bytes: Uint8Array, date: Date, fonts: DocxFont[] =
         value.replace(pattern, (_m, id: string) => `"${rename.get(id)}"`),
       );
     }
+  }
+
+  // 2b. Photo: the docx library has no crop or mask option, so set the
+  // picture's source rectangle and preset geometry directly.
+  if (photo) {
+    const doc = text.get("word/document.xml") ?? "";
+    const crop = `<a:srcRect l="${photo.left}" t="${photo.top}" r="${photo.right}" b="${photo.bottom}"/>`;
+    text.set(
+      "word/document.xml",
+      doc
+        .replace(/<a:srcRect\s*\/>|<a:srcRect[^>]*\/>/, crop)
+        .replace(/(<pic:spPr\b[^>]*>[\s\S]*?<a:prstGeom prst=")rect(")/, `$1${photo.geometry}$2`),
+    );
   }
 
   // 3. Fonts.

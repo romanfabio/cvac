@@ -13,14 +13,14 @@
       "type": "string"
     },
     "extends": {
-      "description": "Theme to inherit from, e.g. 'default'",
+      "description": "Theme to build on: a built-in (default, sidebar) or a file like ./base.yaml",
       "type": "string"
     },
     "page": {
       "type": "object",
       "properties": {
         "size": {
-          "default": "A4",
+          "description": "Default A4",
           "type": "string",
           "enum": [
             "A4",
@@ -28,7 +28,7 @@
           ]
         },
         "margins": {
-          "default": "18mm",
+          "description": "Default 18mm",
           "anyOf": [
             {
               "anyOf": [
@@ -107,6 +107,119 @@
       },
       "additionalProperties": false
     },
+    "layout": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "description": "Default single",
+          "type": "string",
+          "enum": [
+            "single",
+            "sidebar"
+          ]
+        },
+        "side": {
+          "description": "Sidebar side (default left)",
+          "type": "string",
+          "enum": [
+            "left",
+            "right"
+          ]
+        },
+        "width": {
+          "description": "Sidebar width (default 32%)",
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?%$"
+            },
+            {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "string",
+                  "pattern": "^\\d+(\\.\\d+)?(pt|mm|cm|in)$"
+                }
+              ]
+            }
+          ]
+        },
+        "gap": {
+          "description": "Space between the columns (default 8mm)",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?(pt|mm|cm|in)$"
+            }
+          ]
+        },
+        "header": {
+          "description": "Header across the page (full, default) or only above the main column",
+          "type": "string",
+          "enum": [
+            "full",
+            "main"
+          ]
+        },
+        "sidebar": {
+          "description": "Section ids placed in the sidebar",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "photo": {
+      "type": "object",
+      "properties": {
+        "show": {
+          "description": "Default true when the CV has basics.photo",
+          "type": "boolean"
+        },
+        "position": {
+          "description": "Default header-right (sidebar layouts: sidebar)",
+          "type": "string",
+          "enum": [
+            "header-right",
+            "header-left",
+            "sidebar"
+          ]
+        },
+        "size": {
+          "description": "Width and height (default 28mm)",
+          "anyOf": [
+            {
+              "type": "number",
+              "minimum": 0
+            },
+            {
+              "type": "string",
+              "pattern": "^\\d+(\\.\\d+)?(pt|mm|cm|in)$"
+            }
+          ]
+        },
+        "shape": {
+          "description": "Default circle",
+          "type": "string",
+          "enum": [
+            "square",
+            "rounded",
+            "circle"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
     "tokens": {
       "type": "object",
       "properties": {
@@ -117,9 +230,9 @@
               "type": "object",
               "properties": {
                 "family": {
+                  "description": "A bundled font family, e.g. Source Sans 3",
                   "type": "string",
-                  "minLength": 1,
-                  "description": "A bundled font family, e.g. Inter"
+                  "minLength": 1
                 },
                 "size": {
                   "anyOf": [
@@ -154,9 +267,6 @@
                   "type": "boolean"
                 }
               },
-              "required": [
-                "family"
-              ],
               "additionalProperties": false
             },
             "heading": {
@@ -164,9 +274,9 @@
               "type": "object",
               "properties": {
                 "family": {
+                  "description": "A bundled font family, e.g. Source Sans 3",
                   "type": "string",
-                  "minLength": 1,
-                  "description": "A bundled font family, e.g. Inter"
+                  "minLength": 1
                 },
                 "size": {
                   "anyOf": [
@@ -201,9 +311,6 @@
                   "type": "boolean"
                 }
               },
-              "required": [
-                "family"
-              ],
               "additionalProperties": false
             },
             "name": {
@@ -211,9 +318,9 @@
               "type": "object",
               "properties": {
                 "family": {
+                  "description": "A bundled font family, e.g. Source Sans 3",
                   "type": "string",
-                  "minLength": 1,
-                  "description": "A bundled font family, e.g. Inter"
+                  "minLength": 1
                 },
                 "size": {
                   "anyOf": [
@@ -248,9 +355,6 @@
                   "type": "boolean"
                 }
               },
-              "required": [
-                "family"
-              ],
               "additionalProperties": false
             }
           },
@@ -268,6 +372,11 @@
               "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
             },
             "accent": {
+              "type": "string",
+              "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
+            },
+            "sidebarBackground": {
+              "description": "Fill behind the sidebar (sidebar layouts)",
               "type": "string",
               "pattern": "^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$"
             }

@@ -31,6 +31,7 @@ export async function runLint(cv: string | undefined, flags: LintFlags, io: Io):
         const common = {
           fonts,
           ...(inputs.theme ? { theme: inputs.theme } : {}),
+          assets: inputs.assets,
           ...(lang ? { locale: lang } : {}),
           ...(variant ? { variant } : {}),
         };

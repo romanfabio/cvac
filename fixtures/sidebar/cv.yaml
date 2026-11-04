@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=../../packages/core/schemas/cv.schema.json
+# Sidebar fixture: built-in sidebar theme, a photo, skills/languages in the sidebar.
+meta:
+  defaultLocale: en
+  locales: [en, it]
+  lint: { photo: off }
+
+basics:
+  name: Giulia Ferrari
+  title: { en: Staff Platform Engineer, it: Staff Platform Engineer }
+  email: giulia.ferrari@example.com
+  phone: "+39 333 123 4567"
+  location: { city: Torino, country: { en: Italy, it: Italia } }
+  photo: photo.jpg
+  summary:
+    en: Platform engineer focused on developer experience, reliability and cost-aware cloud architecture.
+    it: Platform engineer con focus su developer experience, affidabilità e architetture cloud attente ai costi.
+  profiles:
+    - { network: GitHub, url: https://github.com/gferrari }
+    - { network: LinkedIn, url: https://www.linkedin.com/in/gferrari }
+
+sections:
+  - type: experience
+    items:
+      - company: Nexa Cloud
+        role: Staff Platform Engineer
+        location: Torino
+        start: 2021-09
+        end: present
+        highlights:
+          - Led the migration of 140 services to Kubernetes with zero customer-facing downtime
+          - Cut cloud spend by 31% through rightsizing and spot capacity
+          - Built the internal developer portal used by 400 engineers
+      - company: Fintech Labs
+        role: { en: Senior Backend Engineer, it: Senior Backend Engineer }
+        location: Milano
+        start: 2017-02
+        end: 2021-08
+        highlights:
+          - Designed the payments ledger handling 5M transactions/day
+          - Introduced contract testing across 30 services
+      - company: Studio Web
+        role: Developer
+        start: 2014-06
+        end: 2017-01
+        highlights: [Delivered 20+ client projects in TypeScript and Python]
+
+  - type: education
+    items:
+      - institution: Politecnico di Torino
+        degree: { en: MSc Computer Engineering, it: Laurea Magistrale in Ingegneria Informatica }
+        start: 2012
+        end: 2014
+
+  - type: skills
+    items:
+      - { name: Platform, keywords: [Kubernetes, Terraform, Argo CD, Helm] }
+      - { name: Languages, keywords: [Go, TypeScript, Python] }
+      - { name: Cloud, keywords: [AWS, Azure, GCP] }
+
+  - type: languages
+    items:
+      - { language: { en: Italian, it: Italiano }, fluency: { en: Native, it: Madrelingua } }
+      - { language: { en: English, it: Inglese }, fluency: C1 }
+
+  - type: certifications
+    items:
+      - { name: CKA, issuer: CNCF, date: 2022-03 }
+      - { name: AWS Solutions Architect Professional, issuer: AWS, date: 2020-11 }

@@ -31,6 +31,7 @@ export async function runValidate(
         const r = await buildPdf(inputs.content, {
           fonts,
           ...(inputs.theme ? { theme: inputs.theme } : {}),
+          assets: inputs.assets,
           ...(lang ? { locale: lang } : {}),
           ...(variant ? { variant } : {}),
         });
