@@ -42,3 +42,35 @@ export function formatDiagnostic(d: Diagnostic): string {
     .join(":");
   return `${loc}: ${d.severity} [${d.code}] ${d.message}`;
 }
+
+/**
+ * Same problem reported by several builds (e.g. pdf + docx) is printed once,
+ * and everything is sorted in source order (file, line, column; problems
+ * without a location last), like a compiler.
+ */
+export function sortDiagnostics(diags: Diagnostic[]): Diagnostic[] {
+  const seen = new Set<string>();
+  const unique = diags.filter((d) => {
+    const key = JSON.stringify([d.severity, d.code, d.message, d.file, d.range?.start, d.path]);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+  const rank = (d: Diagnostic): [number, string, number, number] => [
+    d.file === undefined ? 1 : 0,
+    d.file ?? "",
+    d.range?.start.line ?? Number.MAX_SAFE_INTEGER,
+    d.range?.start.column ?? 0,
+  ];
+  return unique
+    .map((d, i) => ({ d, i, r: rank(d) }))
+    .sort((a, b) => {
+      for (let k = 0; k < 4; k++) {
+        const x = a.r[k] as number | string;
+        const y = b.r[k] as number | string;
+        if (x !== y) return x < y ? -1 : 1;
+      }
+      return a.i - b.i;
+    })
+    .map((x) => x.d);
+}

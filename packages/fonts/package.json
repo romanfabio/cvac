@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
+    "./faces": {
+      "source": "./src/faces.ts",
+      "types": "./dist/faces.d.ts",
+      "default": "./dist/faces.js"
+    },
     "./files/*": "./files/*"
   },
   "files": [

@@ -1,0 +1,325 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --border: #dfe3e8;
+  --text: #1a1d21;
+  --muted: #5b6470;
+  --accent: #1f4e79;
+  --accent-text: #ffffff;
+  --error: #b42318;
+  --warning: #9a6700;
+  --info: #1f6f8b;
+  --page-shadow: 0 1px 3px rgb(0 0 0 / 0.12), 0 6px 18px rgb(0 0 0 / 0.06);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15181c;
+    --surface: #1e2227;
+    --border: #2e343b;
+    --text: #e6e8eb;
+    --muted: #9aa4af;
+    --accent: #6ea8dc;
+    --accent-text: #0b1520;
+    --error: #ff7b72;
+    --warning: #e3b341;
+    --info: #79c0ff;
+    --page-shadow: 0 1px 3px rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font:
+    14px / 1.4 system-ui,
+    -apple-system,
+    "Segoe UI",
+    sans-serif;
+}
+
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100%;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  padding: 8px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.toolbar h1 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.toolbar h1 span {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.controls label.attention {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+select,
+button,
+input[type="file"] {
+  font: inherit;
+  color: var(--text);
+}
+
+select {
+  padding: 4px 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+input[type="file"] {
+  max-width: 190px;
+  font-size: 12px;
+}
+
+button {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: pointer;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 0;
+}
+
+.left {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-height: 0;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 13px;
+}
+
+.tab.active {
+  color: var(--text);
+  border-color: var(--border);
+  background: var(--bg);
+}
+
+.badge {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--error);
+  color: #fff;
+  font-size: 11px;
+}
+
+.editor {
+  min-height: 0;
+}
+
+.problems {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  max-height: 30vh;
+  overflow: auto;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+
+.problems.empty {
+  padding: 6px 12px;
+  color: var(--muted);
+}
+
+.problem {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  gap: 8px;
+  width: 100%;
+  padding: 5px 12px;
+  text-align: left;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.problem:hover:not(:disabled) {
+  background: var(--bg);
+}
+
+.problem:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.problem .sev {
+  font-weight: 600;
+}
+
+.problem.error .sev {
+  color: var(--error);
+}
+
+.problem.warning .sev {
+  color: var(--warning);
+}
+
+.problem.info .sev {
+  color: var(--info);
+}
+
+.problem .help {
+  display: block;
+  color: var(--muted);
+}
+
+.problem .where {
+  color: var(--muted);
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+}
+
+.right {
+  min-height: 0;
+  overflow: auto;
+}
+
+.preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+}
+
+.page {
+  background: #fff;
+  box-shadow: var(--page-shadow);
+}
+
+.status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  padding: 4px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.status .privacy {
+  margin-left: auto;
+}
+
+/* Narrow screens: stack the panes and let the page scroll as a whole. */
+@media (max-width: 900px) {
+  .app {
+    height: auto;
+    min-height: 100%;
+  }
+
+  .panes {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+  }
+
+  .left {
+    height: 70vh;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .right {
+    overflow: visible;
+  }
+
+  .status .privacy {
+    margin-left: 0;
+  }
+}
+
+.editor .cm-editor {
+  height: 100%;
+  font-size: 13px;
+}
+
+.editor .cm-scroller {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+.editor .cm-tooltip-lint {
+  white-space: pre-wrap;
+  max-width: 480px;
+}

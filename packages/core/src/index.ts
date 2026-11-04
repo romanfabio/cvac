@@ -23,6 +23,7 @@ export { type DrawItem, type Measurer, type TypesetPage, typeset } from "./rende
 export { type ResolvedContent, resolveLocale } from "./resolve/locale.ts";
 export { resolveVariant, usedTags, type VariantResolution } from "./resolve/variant.ts";
 export { contentJsonSchema, themeJsonSchema } from "./schema.ts";
+export { STARTER_CV, STARTER_THEME } from "./templates.ts";
 export {
   BUILTIN_THEMES,
   DEFAULT_FONT_FAMILY,

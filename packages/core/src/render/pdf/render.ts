@@ -1,7 +1,7 @@
-import PDFDocument from "pdfkit";
 import type { Diagnostic } from "../../diagnostics.ts";
 import { type FontFace, type FontSet, faceKey, selectFace } from "../../fonts.ts";
 import type { LayoutDocument, PhotoBox, TextStyle } from "../../layout/ir.ts";
+import { loadPdfKit } from "./pdfkit.ts";
 import { type Measurer, type TypesetPage, typeset } from "./typeset.ts";
 
 export interface PdfOptions {
@@ -28,6 +28,7 @@ export async function renderPdf(layout: LayoutDocument, opts: PdfOptions): Promi
   const diagnostics: Diagnostic[] = [];
   const date = opts.date ?? DEFAULT_DOCUMENT_DATE;
 
+  const PDFDocument = await loadPdfKit();
   const doc = new PDFDocument({
     size: [layout.page.width, layout.page.height],
     margin: 0,

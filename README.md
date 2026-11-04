@@ -7,7 +7,7 @@ Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** o
 - **ATS-aware.** Layout is free, and a linter (on by default) warns about choices that hurt HR scanners.
 - **Variants and languages.** Tag sections, items or bullets to build tailored variants. Write text as `{ en: ..., it: ... }`.
 
-> Status: early development. Model, parsing, PDF/DOCX rendering, the `cvac` CLI, the ATS linter, variants and themes with sidebar layouts and photos work (M1–M7). The web editor is next.
+> Status: early development. Model, parsing, PDF/DOCX rendering, the `cvac` CLI, the ATS linter, variants, themes with sidebar layouts and photos, and the web editor work (M1–M8).
 
 ## Packages
 
@@ -15,6 +15,7 @@ Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** o
 | ------------------------------- | ------------------------------------------------------------------------------------------------ |
 | [`@cvac/core`](packages/core)   | Model, YAML parsing with located diagnostics, JSON Schemas, i18n, layout, PDF and DOCX renderers |
 | [`@cvac/cli`](packages/cli)     | The `cvac` command line                                                                          |
+| [`apps/web`](apps/web)          | Web editor: YAML on the left, live PDF on the right, all in the browser                          |
 | [`@cvac/fonts`](packages/fonts) | Bundled fonts (SIL OFL) and a Node loader                                                        |
 
 ## Quick start
@@ -135,6 +136,26 @@ Some ATS safety is built into the output rather than linted:
 A round-trip test checks that every piece of text can be read back from the
 PDF and the DOCX, in order.
 
+## Web editor
+
+```bash
+npm run web        # http://localhost:5173
+```
+
+The web editor builds your CV in a Web Worker as you type, using the same
+core code as the CLI. Nothing is uploaded: files, the photo and your edits
+stay in the browser, which saves them locally.
+
+- `cv.yaml` and `theme.yaml` each have a tab, with schema-based completion
+  and cvac's own diagnostics shown inline and in a problems list.
+- You can pick the language and the variant, choose the photo, and download
+  the PDF or DOCX.
+- The status bar shows the PDF's SHA-256. The same files give the same hash
+  in the browser and with `cvac build`.
+
+`npm run build` produces a static site in `apps/web/dist` that any static
+host can serve.
+
 ## How it works
 
 ```
@@ -142,12 +163,15 @@ cv.yaml ─parse─► Content ─resolve locale─► layout IR (flow, semantic
 theme.yaml ─parse─► Theme ─layer over default─┘                              └► DOCX (native Word styles)
 ```
 
-Determinism: only bundled fonts are embedded, document dates are fixed
-(`2000-01-01` unless you pass `date`), there is no `Intl` or platform data in
-the output path, and compression is pure JS. Golden SHA-256 hashes in
-[`fixtures/golden-pdf.json`](fixtures/golden-pdf.json) and [`fixtures/golden-docx.json`](fixtures/golden-docx.json) are checked in CI on Linux,
-Windows and macOS. After an intended output change, run
-`UPDATE_GOLDEN=1 npm test`.
+Determinism:
+- Only bundled fonts are embedded.
+- Document dates are fixed (`2000-01-01` unless you pass `date`).
+- There is no `Intl` or platform data in the output path.
+- Compression is always pure-JS fflate. In Node too, cvac uses pdfkit's
+  browser build, because its Node build uses the system zlib. Golden SHA-256 hashes in
+  [`fixtures/golden-pdf.json`](fixtures/golden-pdf.json) and [`fixtures/golden-docx.json`](fixtures/golden-docx.json) are checked in CI on Linux,
+  Windows and macOS. After an intended output change, run
+  `UPDATE_GOLDEN=1 npm test`.
 
 DOCX output uses native Word constructs: built-in heading styles, right tab
 stops for dates, real bullet lists and keep-with-next rules, with no text

@@ -180,7 +180,8 @@ export async function renderDocx(
     });
   }
 
-  const packed = await Packer.toBuffer(doc);
+  // ArrayBuffer, not Buffer: the same code runs in Node and in the browser.
+  const packed = await Packer.toArrayBuffer(doc);
   return {
     docx: normalizeDocx(
       new Uint8Array(packed),

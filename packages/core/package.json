@@ -9,6 +9,11 @@
       "source": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./editor": {
+      "source": "./src/editor.ts",
+      "types": "./dist/editor.d.ts",
+      "default": "./dist/editor.js"
     }
   },
   "files": [

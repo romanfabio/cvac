@@ -164,3 +164,10 @@ describe("PDF content (ATS readability)", () => {
     expect(r.diagnostics).toMatchObject([{ code: "unknown-font" }]);
   });
 });
+
+describe("PDF runtime independence", () => {
+  it("uses pdfkit's fflate build in Node too, so bytes match the browser", async () => {
+    const { pdfKitBuild } = await import("../src/render/pdf/pdfkit.ts");
+    expect(await pdfKitBuild()).toBe("browser");
+  });
+});
