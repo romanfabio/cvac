@@ -13,7 +13,7 @@ import { fixtureOptions, loadFixture } from "./fixtures.ts";
  */
 
 const FIXTURES = join(import.meta.dirname, "..", "..", "..", "fixtures");
-/** [fixture[:variant], locale] */
+/** [fixture[:variant][+theme], locale] */
 const CASES: [string, string][] = [
   ["basic", "en"],
   ["basic", "it"],
@@ -21,6 +21,11 @@ const CASES: [string, string][] = [
   ["variants:backend", "en"],
   ["variants:lead", "it"],
   ["sidebar", "en"],
+  ["long+compact", "en"],
+  ["basic+classic", "it"],
+  ["sidebar+classic", "en"],
+  ["long+modern", "en"],
+  ["sidebar+sidebar-right", "en"],
 ];
 const fonts = loadBundledFonts();
 const norm = (s: string) => s.replace(/\s+/g, " ").trim();

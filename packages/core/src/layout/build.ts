@@ -158,12 +158,19 @@ class Builder {
   header(content: ResolvedContent) {
     const { basics } = content;
     const t = this.theme;
+    const align = t.header.align === "center" ? ({ align: "center" } as const) : {};
+    const nameColor = t.header.nameColor === "accent" ? t.colors.accent : t.colors.text;
     this.push(
-      this.para("name", [{ text: basics.name, style: this.style(t.fonts.name) }], {
-        headingLevel: 1,
-        lineHeight: 1.1,
-        spaceAfter: 2,
-      }),
+      this.para(
+        "name",
+        [{ text: basics.name, style: this.style(t.fonts.name, { color: nameColor }) }],
+        {
+          headingLevel: 1,
+          lineHeight: 1.1,
+          spaceAfter: 2,
+          ...align,
+        },
+      ),
     );
     if (basics.title) {
       this.push(
@@ -178,7 +185,7 @@ class Builder {
               }),
             },
           ],
-          { spaceAfter: 4 },
+          { spaceAfter: 4, ...align },
         ),
       );
     }
@@ -198,11 +205,21 @@ class Builder {
     if (loc) add(loc);
     if (basics.url) add(stripProtocol(basics.url), basics.url);
     for (const p of basics.profiles ?? []) add(stripProtocol(p.url), p.url);
-    if (contact.length) this.push(this.para("contact", contact, { spaceAfter: 0 }));
+    if (contact.length) this.push(this.para("contact", contact, { spaceAfter: 0, ...align }));
   }
 
-  sectionHeading(text: string) {
+  sectionHeading(label: string) {
     const t = this.theme;
+    // Uppercase the text itself (not a font effect), so every format and
+    // every text extractor sees the same characters. toUpperCase is
+    // locale-independent, hence deterministic.
+    const text = t.headings.case === "upper" ? label.toUpperCase() : label;
+    const decoration: Partial<Paragraph> =
+      t.headings.rule === "underline"
+        ? { ruleBelow: { color: t.colors.accent, thickness: 0.6, gap: 2 } }
+        : t.headings.rule === "bar"
+          ? { bar: { color: t.colors.accent, width: 3, gap: 6 }, indent: 9 }
+          : {};
     this.push(
       this.para(
         "heading",
@@ -213,7 +230,7 @@ class Builder {
           spaceAfter: 5,
           lineHeight: 1.15,
           keepWithNext: true,
-          ruleBelow: { color: t.colors.accent, thickness: 0.6, gap: 2 },
+          ...decoration,
         },
       ),
     );

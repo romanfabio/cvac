@@ -69,6 +69,9 @@ describe("DOCX determinism (golden hashes)", () => {
     ["variants.backend.en.docx", "variants", { locale: "en", variant: "backend" }],
     ["sidebar.en.docx", "sidebar", { locale: "en" }],
     ["basic.en.no-embed.docx", "basic", { locale: "en", embed: false }],
+    ["basic@classic.it.docx", "basic+classic", { locale: "it" }],
+    ["sidebar@classic.en.docx", "sidebar+classic", { locale: "en" }],
+    ["basic@modern.en.docx", "basic+modern", { locale: "en" }],
   ];
 
   for (const [key, fixture, opts] of cases) {
@@ -175,7 +178,7 @@ describe("DOCX fonts", () => {
     expect(table).not.toContain("w:embedRegular");
   });
 
-  it("embeds all faces by default, obfuscated with deterministic keys", async () => {
+  it("embeds all faces of the used family by default, obfuscated with deterministic keys", async () => {
     const { files, xml } = parts(await build("basic"));
     const table = xml("word/fontTable.xml");
     // The substitution hints stay, for apps that ignore embedded fonts.
@@ -199,7 +202,8 @@ describe("DOCX fonts", () => {
       // De-obfuscating (XOR is its own inverse) must give back a bundled face byte-for-byte.
       expect(original.has(sha256(obfuscate(odttf, key as string)))).toBe(true);
     }
-    expect(embeds).toHaveLength(BUNDLED_FACES.length);
+    // Only the theme's family (Source Sans 3), not every bundled font.
+    expect(embeds).toHaveLength(BUNDLED_FACES.filter(([f]) => f === "Source Sans 3").length);
   });
 
   it("warns when embedding is requested without font files", async () => {

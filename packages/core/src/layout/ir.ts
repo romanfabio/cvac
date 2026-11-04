@@ -53,8 +53,15 @@ export interface Paragraph {
   /** Line height as a multiple of the largest font size on the line. */
   lineHeight: number;
   keepWithNext?: boolean;
+  /** Horizontal alignment of the lines (default left). */
+  align?: "center";
   /** Draw a rule under the paragraph (section headings). */
   ruleBelow?: { color: string; thickness: number; gap: number };
+  /**
+   * Draw a vertical bar left of the text, as tall as each line. The text
+   * starts `width + gap` points in (included in `indent`).
+   */
+  bar?: { color: string; width: number; gap: number };
 }
 
 /** Blocks that should stay on one page if they fit (one CV entry). */

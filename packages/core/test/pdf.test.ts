@@ -17,6 +17,12 @@ const CASES: Record<string, string[]> = {
   "variants:backend": ["en"],
   "variants:lead": ["it"],
   sidebar: ["en", "it"],
+  // Built-in themes (fixture+theme).
+  "long+compact": ["en"],
+  "basic+classic": ["it"],
+  "sidebar+classic": ["en"],
+  "basic+modern": ["en"],
+  "sidebar+sidebar-right": ["en"],
 };
 
 const fonts = loadBundledFonts();
@@ -58,7 +64,7 @@ describe("PDF determinism (golden hashes)", () => {
 
   for (const [name, locales] of Object.entries(CASES)) {
     for (const locale of locales) {
-      const key = `${name.replace(":", ".")}.${locale}.pdf`;
+      const key = `${name.replace(":", ".").replace("+", "@")}.${locale}.pdf`;
       it(`${key} is byte-identical across builds and matches the golden hash`, async () => {
         const a = await build(name, locale);
         const b = await build(name, locale);

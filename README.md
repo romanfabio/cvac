@@ -187,10 +187,23 @@ Warnings for a variant still point at the right line of your file.
 
 ## Themes
 
+Six themes are built in. Use one as is with a one-line `theme.yaml` (`extends: classic`), or build on it:
+
+| Theme           | Look                                                                                         |
+| --------------- | -------------------------------------------------------------------------------------------- |
+| `default`       | One column, Source Sans 3, headings in blue over a thin rule                                  |
+| `compact`       | Like `default` with smaller type and tighter spacing, to keep a long CV on fewer pages        |
+| `classic`       | Source Serif 4, a centered header, capitalized headings over a rule, near-black                |
+| `modern`        | A large name in teal, capitalized headings marked with a teal bar                             |
+| `sidebar`       | Two columns: summary, skills, languages and certifications in a tinted left column            |
+| `sidebar-right` | The header across the page, then the main column and an untinted sidebar on the right         |
+
+The two sidebar themes affect only the PDF: the DOCX is always one column (see [Output](#output)).
+
 A theme lists only what it changes from its base:
 
 ```yaml
-extends: sidebar          # built-ins: default (one column), sidebar; or a file: ./base.yaml
+extends: sidebar          # a built-in from the table above, or a file: ./base.yaml
 page:
   size: A4                # or Letter
   margins: 16mm           # or { top, right, bottom, left }
@@ -200,9 +213,11 @@ layout:
   width: 30%
   sidebar: [summary, skills, languages]   # section ids; everything else goes in the main column
 photo: { position: sidebar, size: 28mm, shape: circle }   # or header-right / header-left; square, rounded
+header: { align: center, nameColor: accent }   # or left; text
+headings: { rule: bar, case: upper }           # or underline, none; normal
 tokens:
   fonts:
-    body: { family: Source Sans 3, size: 10pt }
+    body: { family: Source Serif 4, size: 10pt }   # bundled: Source Sans 3, Source Serif 4
   colors: { text: "#1a1a1a", muted: "#555555", accent: "#7a1f3d", sidebarBackground: "#f4eef1" }
   spacing: { section: 12pt, item: 7pt, line: 1.25 }
 format:
@@ -260,7 +275,7 @@ A test checks that every piece of text can be read back from both formats, in or
 **DOCX:**
 - **Structure:** it uses native Word features: heading styles, right-aligned dates on a tab stop, real bullet lists, and rules that keep entries together. It has no text boxes, tables or page headers.
 - **One column:** it always has one column, in CV order, because ATS portals read Word files as linear text. The `multi-column` warning reminds you of this when the PDF has a sidebar.
-- **Fonts:** the bundled fonts are embedded, about 0.5 MB, so the document looks the same everywhere. `--no-embed-fonts` gives a small file, and Word then picks a similar sans-serif when the font isn't installed.
+- **Fonts:** the theme's fonts are embedded, about 0.5 MB per family, so the document looks the same everywhere. `--no-embed-fonts` gives a small file, and Word then picks a similar font (sans-serif or serif) when the font isn't installed.
 
 **Determinism:**
 - Only the bundled fonts are used, never system fonts.
@@ -336,7 +351,7 @@ theme.yaml ─parse─► theme ─extends/merge────┘                 
 | Package | Contents |
 | --- | --- |
 | [`@cvac/core`](packages/core) | Model, YAML parsing with located diagnostics, JSON Schemas, variants, languages, themes, layout, the PDF and DOCX renderers, and the linter. It runs unchanged in Node and in browsers, and reads no files |
-| [`@cvac/fonts`](packages/fonts) | The bundled fonts (Source Sans 3) and a Node loader |
+| [`@cvac/fonts`](packages/fonts) | The bundled fonts (Source Sans 3, Source Serif 4) and a Node loader |
 | [`@cvac/cli`](packages/cli) | The `cvac` command line |
 | [`apps/web`](apps/web) | The web editor (Vite, React, CodeMirror, pdf.js) |
 
@@ -364,4 +379,4 @@ npm run e2e                # browser tests of the built web editor (needs Google
 
 ## License
 
-MIT. The bundled Source Sans 3 fonts are under the SIL Open Font License 1.1 ([packages/fonts/files/source-sans-3/OFL.txt](packages/fonts/files/source-sans-3/OFL.txt)).
+MIT. The bundled Source Sans 3 and Source Serif 4 fonts are under the SIL Open Font License 1.1 ([source-sans-3/OFL.txt](packages/fonts/files/source-sans-3/OFL.txt), [source-serif-4/OFL.txt](packages/fonts/files/source-serif-4/OFL.txt)).

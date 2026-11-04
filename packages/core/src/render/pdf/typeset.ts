@@ -166,8 +166,14 @@ class Typesetter {
     let textHead: Frame = head;
     if (besideHeader) {
       const w = besideHeader.size + PHOTO_GAP;
-      textHead =
-        besideHeader.position === "header-right" ? [head[0], head[1] - w] : [head[0] + w, head[1]];
+      // A centered header stays centered on the page: keep the photo's
+      // width free on both sides.
+      const centered = regions.header.some((b) => b.kind === "paragraph" && b.align === "center");
+      textHead = centered
+        ? [head[0] + w, head[1] - w]
+        : besideHeader.position === "header-right"
+          ? [head[0], head[1] - w]
+          : [head[0] + w, head[1]];
       const x = besideHeader.position === "header-right" ? head[1] - besideHeader.size : head[0];
       this.at(0).photo.push({ type: "image", x, y: this.top, photo: besideHeader });
     }
@@ -367,6 +373,20 @@ class Typesetter {
       // Center the font box (ascent + descent) in the line box: CSS-like half-leading.
       const baseline = this.y + (line.height - line.ascent - line.descent) / 2 + line.ascent;
       let x = this.left + p.indent;
+      if (p.align === "center") {
+        const lineWidth = sum(line.pieces.map((piece) => piece.width));
+        x += Math.max(0, this.right - this.left - p.indent - lineWidth) / 2;
+      }
+      if (p.bar) {
+        this.emit({
+          type: "rect",
+          x: this.left + p.indent - p.bar.gap - p.bar.width,
+          y: this.y,
+          width: p.bar.width,
+          height: line.height,
+          color: p.bar.color,
+        });
+      }
 
       if (i === 0 && p.bullet) {
         const st = p.runs[0]?.style;

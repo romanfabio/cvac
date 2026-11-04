@@ -13,8 +13,23 @@
       "type": "string"
     },
     "extends": {
-      "description": "Theme to build on: a built-in (default, sidebar) or a file like ./base.yaml",
-      "type": "string"
+      "description": "Theme to build on: a built-in (default, compact, classic, modern, sidebar, sidebar-right) or a file like ./base.yaml",
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": [
+            "default",
+            "compact",
+            "classic",
+            "modern",
+            "sidebar",
+            "sidebar-right"
+          ]
+        },
+        {
+          "type": "string"
+        }
+      ]
     },
     "page": {
       "type": "object",
@@ -215,6 +230,51 @@
             "square",
             "rounded",
             "circle"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "header": {
+      "type": "object",
+      "properties": {
+        "align": {
+          "description": "Default left",
+          "type": "string",
+          "enum": [
+            "left",
+            "center"
+          ]
+        },
+        "nameColor": {
+          "description": "Color of your name: the text color (default) or the accent color",
+          "type": "string",
+          "enum": [
+            "text",
+            "accent"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "headings": {
+      "type": "object",
+      "properties": {
+        "rule": {
+          "description": "A line under the heading (default), an accent bar before it, or nothing",
+          "type": "string",
+          "enum": [
+            "underline",
+            "bar",
+            "none"
+          ]
+        },
+        "case": {
+          "description": "upper writes headings in capitals (the text itself, so ATS read it as written)",
+          "type": "string",
+          "enum": [
+            "normal",
+            "upper"
           ]
         }
       },

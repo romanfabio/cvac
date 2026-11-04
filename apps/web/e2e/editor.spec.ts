@@ -1,6 +1,6 @@
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
@@ -8,8 +8,11 @@ import { expect, type Page, test } from "@playwright/test";
 const ROOT = resolve(import.meta.dirname, "../../..");
 const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
 
-/** Build the starter CV with the real CLI (from sources), to compare hashes. */
-function cliHashes(): { pdf: string; docx: string } {
+/**
+ * Build the starter CV with the real CLI (from sources), to compare hashes.
+ * `theme` replaces the starter theme.yaml.
+ */
+function cliHashes(theme?: string): { pdf: string; docx: string } {
   const dir = mkdtempSync(join(tmpdir(), "cvac-e2e-"));
   try {
     const cli = (...args: string[]) =>
@@ -19,6 +22,7 @@ function cliHashes(): { pdf: string; docx: string } {
         { cwd: dir, stdio: "pipe" },
       );
     cli("init");
+    if (theme !== undefined) writeFileSync(join(dir, "theme.yaml"), theme);
     cli("build", "cv.yaml", "--format", "all", "--out", "out");
     return {
       pdf: sha256(readFileSync(join(dir, "out/cv.pdf"))),
@@ -50,6 +54,38 @@ test("previews the starter CV with the same PDF bytes as the CLI", async ({ page
   expect(box?.width).toBeGreaterThan(200);
   expect(box && box.height / box.width).toBeCloseTo(842 / 595, 1); // A4 portrait
   await expect(page.locator(".problems")).toHaveText("No problems");
+});
+
+test("a built-in serif theme gives the CLI's bytes, loading its font on demand", async ({
+  page,
+}) => {
+  const theme = "version: 1\nextends: classic\n";
+  const cli = cliHashes(theme);
+  await page.addInitScript((t) => localStorage.setItem("cvac:theme.yaml", t), theme);
+  const fonts: string[] = [];
+  page.on("request", (r) => {
+    if (r.url().endsWith(".ttf")) fonts.push(r.url().split("/").pop() ?? "");
+  });
+  await open(page);
+  await expect(hash(page)).toHaveAttribute("data-sha256", cli.pdf);
+  expect(fonts.length).toBeGreaterThan(0);
+  expect(fonts.every((f) => f.startsWith("SourceSerif4"))).toBe(true);
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Download DOCX" }).click(),
+  ]);
+  expect(sha256(readFileSync(await download.path()))).toBe(cli.docx);
+});
+
+test("the default theme loads only the sans-serif font", async ({ page }) => {
+  const fonts: string[] = [];
+  page.on("request", (r) => {
+    if (r.url().endsWith(".ttf")) fonts.push(r.url().split("/").pop() ?? "");
+  });
+  await open(page);
+  expect(fonts.length).toBeGreaterThan(0);
+  expect(fonts.every((f) => f.startsWith("SourceSans3"))).toBe(true);
 });
 
 test("downloads a DOCX with the same bytes as the CLI", async ({ page }) => {

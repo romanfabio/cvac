@@ -8,6 +8,7 @@ import {
   locateDiagnostics,
   parseContent,
   parseTheme,
+  resolveTheme,
   sortDiagnostics,
   type Theme,
 } from "@cvac/core";
@@ -44,12 +45,24 @@ export interface BuildResult {
   ms: number;
 }
 
+/** Loads the faces of the given families (the worker fetches them on demand). */
+export type FontLoader = (families: string[]) => Promise<FontSet>;
+
+/** The font families a theme uses (after its `extends` chain). */
+export function themeFamilies(theme: Theme | undefined): string[] {
+  const { fonts } = resolveTheme(theme).theme;
+  return [...new Set([fonts.body.family, fonts.heading.family, fonts.name.family])];
+}
+
 /**
  * Parse, build and lint, exactly like `cvac build` (same core calls, same
  * fixed document date), so the browser produces the same bytes as the CLI.
  * Pure: runs in the worker, and in Node for tests.
  */
-export async function runBuild(req: BuildRequest, fonts: FontSet): Promise<BuildResult> {
+export async function runBuild(
+  req: BuildRequest,
+  fontSource: FontSet | FontLoader,
+): Promise<BuildResult> {
   const t0 = performance.now();
   const diagnostics: Diagnostic[] = [];
   const cv = parseContent(req.cv, { file: CV_FILE });
@@ -73,6 +86,8 @@ export async function runBuild(req: BuildRequest, fonts: FontSet): Promise<Build
   };
 
   if (content && !hasErrors(diagnostics)) {
+    const fonts =
+      typeof fontSource === "function" ? await fontSource(themeFamilies(theme)) : fontSource;
     const opts = {
       fonts,
       assets: req.assets,

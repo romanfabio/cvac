@@ -9,7 +9,7 @@ CV as Code: a CV written in YAML (`cv.yaml` for content, `theme.yaml` for looks)
 | Path | Package | Role |
 | --- | --- | --- |
 | `packages/core` | `@cvac/core` | Model, parsing, variants, i18n, themes, layout, PDF/DOCX renderers, linter. **Isomorphic**: runs in Node and browsers, reads no files |
-| `packages/fonts` | `@cvac/fonts` | Bundled Source Sans 3 (OFL) plus a Node loader; `@cvac/fonts/faces` is browser-safe |
+| `packages/fonts` | `@cvac/fonts` | Bundled Source Sans 3 and Source Serif 4 (OFL) plus a Node loader; `@cvac/fonts/faces` is browser-safe |
 | `packages/cli` | `@cvac/cli` | The `cvac` command (commander) |
 | `apps/web` | `@cvac/web` | Browser editor: Vite + React + CodeMirror 6 + pdf.js, builds run in a Web Worker |
 | `fixtures/` | | Sample CVs for tests, and golden hashes (`golden-pdf.json`, `golden-docx.json`) |
@@ -112,6 +112,16 @@ The CLI (`packages/cli/src`) reads files (`inputs.ts`: the CV, the theme chain i
   2. Resolve it in `theme/resolve.ts`.
   3. Use it in layout and typesetting.
   4. If it can hurt readability, add a lint rule that only flags user-set values.
+  5. If the IR gains a field (as `align` and `bar` did), map it in both renderers, the PDF typesetter and `render/docx/render.ts`.
+- **New built-in theme:**
+  1. Add its name to `BUILTIN_THEME_NAMES` (`model/theme.ts`) and its object to `BUILTIN_THEMES` (`theme/resolve.ts`). Built-ins extend `default` and only set what differs. Objects merge, so a built-in cannot remove a base value (for example a sidebar tint): extend `default` instead.
+  2. Add golden cases (`fixture+theme` in `pdf.test.ts` and `docx.test.ts`) and a round-trip case.
+  3. The `built-in themes` tests in `themes.test.ts` lint every built-in as if all its values were user-set, so it must pass the readability rules.
+  4. Update the theme table in the README and the comment in `STARTER_THEME`.
+- **New bundled font:**
+  1. Add the files under `packages/fonts/files/<family>/` with the OFL text.
+  2. List the faces in `faces.ts`.
+  3. The web worker loads a family only when a theme uses it, and the DOCX embeds only the used families, so other themes' bytes don't change.
 
 ## Dependencies
 
@@ -126,6 +136,7 @@ The CLI (`packages/cli/src`) reads files (`inputs.ts`: the CV, the theme chain i
 ## Pitfalls seen in this repo
 
 - **Line endings:** files must be LF (`.gitattributes` enforces it in git). Python on Windows writes CRLF in text mode; use `open(..., newline="")`. `git ls-files | xargs grep -lU $'\r'` finds offenders.
+- **Checking DOCX rendering:** LibreOffice ignored the embedded Source Serif 4 here and substituted other fonts, while Word rendered it correctly. Check font-related DOCX changes in Word (it can be driven read-only through COM from PowerShell: `Documents.Open(path, $false, $true)`, then `ExportAsFixedFormat(pdf, 17)`).
 - **Web worker lifetime:** create workers inside a `useEffect` and terminate them in its cleanup. React StrictMode runs effects twice in dev.
 - **Preview sizing:** don't rely only on `ResizeObserver` or `requestAnimationFrame` for first-paint sizing; measure on mount. Callbacks don't fire in background tabs.
 - **YAML completion** works by indentation on possibly-invalid text. Test new cases on realistic documents with several list items (`apps/web/test/complete.test.ts`), not one-liners.

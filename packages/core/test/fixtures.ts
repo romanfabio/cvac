@@ -13,15 +13,21 @@ export interface Fixture {
   variant?: string;
 }
 
-/** Load `fixture` or `fixture:variant` with its theme and photo. */
+/**
+ * Load `fixture[:variant][+theme]` with its theme and photo. `+theme` swaps
+ * the fixture's own theme for a built-in one (`{ extends: theme }`).
+ */
 export function loadFixture(name: string): Fixture {
-  const [dir, variant] = name.split(":") as [string, string | undefined];
+  const [spec, builtin] = name.split("+") as [string, string | undefined];
+  const [dir, variant] = spec.split(":") as [string, string | undefined];
   const root = join(FIXTURES, dir);
   const parsed = parseContent(readFileSync(join(root, "cv.yaml"), "utf8"));
   if (!parsed.value) throw new Error(JSON.stringify(parsed.diagnostics));
   const out: Fixture = { content: parsed.value, assets: {} };
   const themeFile = join(root, "theme.yaml");
-  if (existsSync(themeFile)) {
+  if (builtin) {
+    out.theme = { extends: builtin };
+  } else if (existsSync(themeFile)) {
     const t = parseTheme(readFileSync(themeFile, "utf8"));
     if (!t.value) throw new Error(JSON.stringify(t.diagnostics));
     out.theme = t.value;

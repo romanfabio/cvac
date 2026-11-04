@@ -3,7 +3,7 @@ import { fileURLToPath } from "node:url";
 
 import { BUNDLED_FACES, type BundledFontFace } from "./faces.ts";
 
-export { BUNDLED_FACES, type BundledFontFace } from "./faces.ts";
+export { BUNDLED_FACES, BUNDLED_FAMILIES, type BundledFontFace } from "./faces.ts";
 
 let cache: BundledFontFace[] | undefined;
 

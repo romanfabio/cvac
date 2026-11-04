@@ -1,6 +1,6 @@
 import type { Diagnostic } from "../diagnostics.ts";
 import type { DateStyle } from "../i18n/dates.ts";
-import type { Length, Theme } from "../model/theme.ts";
+import { BUILTIN_THEME_NAMES, type Length, type Theme } from "../model/theme.ts";
 
 /** Fully concrete theme: every value present, every length in points. */
 export interface ResolvedTheme {
@@ -16,6 +16,8 @@ export interface ResolvedTheme {
   colors: { text: string; muted: string; accent: string; sidebarBackground?: string };
   spacing: { section: number; item: number; line: number };
   format: { date: DateStyle };
+  header: { align: "left" | "center"; nameColor: "text" | "accent" };
+  headings: { rule: "underline" | "bar" | "none"; case: "normal" | "upper" };
 }
 
 export type ResolvedLayout =
@@ -45,6 +47,7 @@ export interface FontSpec {
 }
 
 export const DEFAULT_FONT_FAMILY = "Source Sans 3";
+export const SERIF_FONT_FAMILY = "Source Serif 4";
 
 /**
  * The built-in, ATS-safe default theme: single column, one bundled font,
@@ -88,9 +91,93 @@ export const sidebarTheme = {
   tokens: { colors: { sidebarBackground: "#eef2f7" } },
 } as const satisfies Theme;
 
-export const BUILTIN_THEMES: Readonly<Record<string, Theme>> = {
+/**
+ * Built-in compact theme: smaller type, tighter spacing and margins, to keep
+ * a long CV on fewer pages. Stays at the readability limits the linter
+ * checks (9pt body text, 12mm margins).
+ */
+export const compactTheme = {
+  name: "compact",
+  extends: "default",
+  page: { margins: { top: "13mm", right: "14mm", bottom: "13mm", left: "14mm" } },
+  tokens: {
+    fonts: {
+      body: { size: "9pt" },
+      heading: { size: "10.5pt" },
+      name: { size: "18pt" },
+    },
+    spacing: { section: "8pt", item: "4.5pt", line: 1.18 },
+  },
+} as const satisfies Theme;
+
+/**
+ * Built-in classic theme: serif type, a centered header and capitalized
+ * headings over a thin rule, in near-black.
+ */
+export const classicTheme = {
+  name: "classic",
+  extends: "default",
+  page: { margins: "20mm" },
+  header: { align: "center" },
+  headings: { rule: "underline", case: "upper" },
+  tokens: {
+    fonts: {
+      body: { family: SERIF_FONT_FAMILY, size: "10pt" },
+      heading: { family: SERIF_FONT_FAMILY, size: "10.5pt", weight: "bold" },
+      name: { family: SERIF_FONT_FAMILY, size: "22pt", weight: "regular" },
+    },
+    colors: { text: "#1a1a1a", muted: "#4d4d4d", accent: "#262626" },
+    spacing: { section: "13pt" },
+  },
+  format: { date: "MMMM YYYY" },
+} as const satisfies Theme;
+
+/**
+ * Built-in modern theme: a large name in the accent color and capitalized
+ * headings marked with an accent bar.
+ */
+export const modernTheme = {
+  name: "modern",
+  extends: "default",
+  header: { nameColor: "accent" },
+  headings: { rule: "bar", case: "upper" },
+  tokens: {
+    fonts: {
+      heading: { size: "11pt" },
+      name: { size: "26pt" },
+    },
+    colors: { text: "#1f2328", muted: "#57606a", accent: "#0f6e6e" },
+    spacing: { section: "14pt" },
+  },
+} as const satisfies Theme;
+
+/**
+ * Built-in sidebar-right theme: the header across the page, then the main
+ * column with an untinted sidebar on the right. Like every sidebar layout,
+ * the DOCX output stays single-column.
+ */
+export const sidebarRightTheme = {
+  name: "sidebar-right",
+  extends: "default",
+  page: { margins: { top: "16mm", right: "15mm", bottom: "16mm", left: "15mm" } },
+  layout: {
+    type: "sidebar",
+    side: "right",
+    width: "30%",
+    gap: "8mm",
+    header: "full",
+    sidebar: ["skills", "languages", "certifications"],
+  },
+  photo: { position: "header-right" },
+} as const satisfies Theme;
+
+export const BUILTIN_THEMES: Readonly<Record<(typeof BUILTIN_THEME_NAMES)[number], Theme>> = {
   default: defaultTheme,
+  compact: compactTheme,
+  classic: classicTheme,
+  modern: modernTheme,
   sidebar: sidebarTheme,
+  "sidebar-right": sidebarRightTheme,
 };
 
 const PAGE_SIZES = { A4: [595.28, 841.89], Letter: [612, 792] } as const;
@@ -156,7 +243,7 @@ export function flattenTheme(theme: Theme | undefined): {
       break;
     }
     seen.add(name);
-    const base = BUILTIN_THEMES[name];
+    const base = (BUILTIN_THEMES as Record<string, Theme | undefined>)[name];
     if (!base) {
       diagnostics.push({
         code: "unknown-theme",
@@ -272,6 +359,8 @@ export function resolveTheme(theme?: Theme): { theme: ResolvedTheme; diagnostics
         line: t.tokens?.spacing?.line ?? d.tokens.spacing.line,
       },
       format: { date: t.format?.date ?? d.format.date },
+      header: { align: t.header?.align ?? "left", nameColor: t.header?.nameColor ?? "text" },
+      headings: { rule: t.headings?.rule ?? "underline", case: t.headings?.case ?? "normal" },
     },
   };
 }

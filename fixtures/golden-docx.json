@@ -2,7 +2,10 @@
   "basic.en.docx": "688e1eefda77d63d393ecccc58da6467dc59e2a1242d05e16030ddd4445cc30d",
   "basic.en.no-embed.docx": "acb828e146d18350f6bf242ccb88468ce7a6f835395378a6f0d035c75e518e85",
   "basic.it.docx": "6e04b708c63c3d9579e2ea5d868e613317f57dbf2224ed04657bd41999c3ef46",
+  "basic@classic.it.docx": "1554894b5e3776ed367266f484849a522801163feafedca11120a32a360a2cb0",
+  "basic@modern.en.docx": "976f057b004ddd1b469aa8c4e542ff6315c5c70bfb6901b834e0f37f7ce19d68",
   "long.en.docx": "e3d92b97206741b47da85dc2182656149ef953b4fa57ac218e4c255088d4b82b",
   "sidebar.en.docx": "c3d4886347647dc4a79860a4ae26649fcbd5a219418f78533d41ce904e500716",
+  "sidebar@classic.en.docx": "fa3d9dec120e962ed5e8b6d67415c859e687d75085df85184aa8ebb94937d4b2",
   "variants.backend.en.docx": "b35030e29bcd18c14ace7513ef484a84aca563f9bd9aadb683c63091a55136f2"
 }

@@ -68,7 +68,8 @@ sections:
 
 export const STARTER_THEME = `# yaml-language-server: $schema=./.cvac/schemas/theme.schema.json
 # Layered over a base theme: set only what you want to change.
-# Built-in bases: default (one column) and sidebar. A file works too: ./base.yaml
+# Built-in bases: default, compact, classic, modern (one column),
+# sidebar and sidebar-right (two columns). A file works too: ./base.yaml
 version: 1
 extends: default
 
@@ -90,6 +91,9 @@ tokens:
 #   side: left
 #   width: 32%
 #   sidebar: [summary, skills, languages]
+
+# header: { align: center, nameColor: accent }   # or left; text
+# headings: { rule: bar, case: upper }           # or underline, none; normal
 
 # The photo (when the CV has basics.photo):
 # photo: { position: header-right, size: 28mm, shape: circle }

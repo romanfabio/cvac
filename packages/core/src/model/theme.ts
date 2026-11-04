@@ -97,17 +97,53 @@ export const Photo = z.strictObject({
   shape: z.enum(["square", "rounded", "circle"]).optional().describe("Default circle"),
 });
 
+/** The block at the top: name, headline and contact line. */
+export const Header = z.strictObject({
+  align: z.enum(["left", "center"]).optional().describe("Default left"),
+  nameColor: z
+    .enum(["text", "accent"])
+    .optional()
+    .describe("Color of your name: the text color (default) or the accent color"),
+});
+
+/** Section headings. */
+export const Headings = z.strictObject({
+  rule: z
+    .enum(["underline", "bar", "none"])
+    .optional()
+    .describe("A line under the heading (default), an accent bar before it, or nothing"),
+  case: z
+    .enum(["normal", "upper"])
+    .optional()
+    .describe("upper writes headings in capitals (the text itself, so ATS read it as written)"),
+});
+
+/** Names of the built-in themes, usable in `extends`. */
+export const BUILTIN_THEME_NAMES = [
+  "default",
+  "compact",
+  "classic",
+  "modern",
+  "sidebar",
+  "sidebar-right",
+] as const;
+
 export const Theme = z.strictObject({
   $schema: z.string().optional(),
   version: z.literal(1).optional(),
   name: z.string().optional(),
+  // The enum branch only lets editors suggest the built-in names.
   extends: z
-    .string()
+    .union([z.enum(BUILTIN_THEME_NAMES), z.string()])
     .optional()
-    .describe("Theme to build on: a built-in (default, sidebar) or a file like ./base.yaml"),
+    .describe(
+      `Theme to build on: a built-in (${BUILTIN_THEME_NAMES.join(", ")}) or a file like ./base.yaml`,
+    ),
   page: Page.optional(),
   layout: Layout.optional(),
   photo: Photo.optional(),
+  header: Header.optional(),
+  headings: Headings.optional(),
   tokens: Tokens.optional(),
   format: Format.optional(),
 });

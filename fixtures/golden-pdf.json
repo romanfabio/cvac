@@ -1,9 +1,14 @@
 {
   "basic.en.pdf": "bc7fcb958496642e297f6fbc2aea5ba0de6f00903d1c5527ea149df0db9151ed",
   "basic.it.pdf": "b949a554feab56e2f0146a3388e57824d9afb7e2d9e4f50b8fc6ea3b4fbd3ba8",
+  "basic@classic.it.pdf": "40d26201cef87680d8b20072fd16a02aa41a6f303fdf4c10872f07afc29a2f95",
+  "basic@modern.en.pdf": "c3b649bff4b9728c5992ada5ab8e773d1208d95c094b72ab948d1b92498633ce",
   "long.en.pdf": "f9565ed3b1b84b364e74304c02187638d4354e05ee27cd48cef98b1a4671b80b",
+  "long@compact.en.pdf": "d5fcb7605de02723407c2bc0a104d8d078eca951fc8942fb5271615a663e05b7",
   "sidebar.en.pdf": "aa3e8eb2c3e32be6d43c1218836ec10af7711f6d8aec267a19d17975f2278a88",
   "sidebar.it.pdf": "c2b211ba1b5118e82dcda1b3067578efa2bf96308966699be3365c47b82ef56e",
+  "sidebar@classic.en.pdf": "739875c28e6e6444eaca69fec769b8384a9d8133d37f0761fc108871f1fea46a",
+  "sidebar@sidebar-right.en.pdf": "7a07c00f5f8d934ba28a35ee10ba910a85c9f98b5316f4cef778485329e9e63d",
   "variants.backend.en.pdf": "572641d31488a7fd95594858dad400860814dc1cc413ad0c6386b5013f7c16ff",
   "variants.lead.it.pdf": "936d96f18374372b1c6e08790fa4bab62e6d2aa14a322c50cd1f03f2346ab230"
 }

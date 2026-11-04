@@ -236,15 +236,32 @@ function paragraph(
       : {}),
     ...(p.keepWithNext || keepNext ? { keepNext: true } : {}),
     ...(keepLines ? { keepLines: true } : {}),
-    ...(p.ruleBelow
+    ...(p.align === "center" ? { alignment: AlignmentType.CENTER } : {}),
+    ...(p.ruleBelow || p.bar
       ? {
           border: {
-            bottom: {
-              style: BorderStyle.SINGLE,
-              size: Math.max(2, Math.round(p.ruleBelow.thickness * 8)),
-              color: hex(p.ruleBelow.color),
-              space: Math.round(p.ruleBelow.gap),
-            },
+            ...(p.ruleBelow
+              ? {
+                  bottom: {
+                    style: BorderStyle.SINGLE,
+                    size: Math.max(2, Math.round(p.ruleBelow.thickness * 8)),
+                    color: hex(p.ruleBelow.color),
+                    space: Math.round(p.ruleBelow.gap),
+                  },
+                }
+              : {}),
+            // The bar is a left paragraph border: Word draws it `space`
+            // points before the text, which starts at the indent.
+            ...(p.bar
+              ? {
+                  left: {
+                    style: BorderStyle.SINGLE,
+                    size: Math.min(96, Math.round(p.bar.width * 8)),
+                    color: hex(p.bar.color),
+                    space: Math.round(p.bar.gap),
+                  },
+                }
+              : {}),
           },
         }
       : {}),

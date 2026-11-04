@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { loadBundledFonts } from "../../fonts/src/index.ts";
 import {
   type Block,
+  BUILTIN_THEMES,
   buildDocx,
   buildPdf,
   type Content,
@@ -20,6 +21,7 @@ import {
   probeImage,
   resolveTheme,
   type TextStyle,
+  type Theme,
   typeset,
 } from "../src/index.ts";
 import { FIXTURES, fixtureOptions, loadFixture } from "./fixtures.ts";
@@ -89,7 +91,12 @@ describe("theme inheritance", () => {
 
   it("reports unknown bases", () => {
     expect(flattenTheme({ extends: "fancy" }).diagnostics).toMatchObject([
-      { code: "unknown-theme", message: expect.stringContaining("Available: default, sidebar") },
+      {
+        code: "unknown-theme",
+        message: expect.stringContaining(
+          "Available: default, compact, classic, modern, sidebar, sidebar-right,",
+        ),
+      },
     ]);
   });
 
@@ -320,5 +327,162 @@ describe("layout lint", () => {
     expect(lint(f.content, { ...fixtureOptions(f), fonts }).map((d) => d.code)).toEqual([
       "lint/multi-column",
     ]);
+  });
+});
+
+describe("built-in themes", () => {
+  const paragraphsOf = (blocks: Block[]) =>
+    blocks.flatMap((b) => (b.kind === "group" ? b.blocks : [b]));
+  const build = (theme?: Theme) => {
+    const r = layout(CV, { ...(theme ? { theme } : {}), locale: "en" });
+    if (!r.layout) throw new Error(JSON.stringify(r.diagnostics));
+    return paragraphsOf(r.layout.blocks);
+  };
+
+  for (const name of Object.keys(BUILTIN_THEMES)) {
+    it(`${name} passes the theme lint rules even when every value counts as user-set`, () => {
+      // Flattened and without `extends`, every value looks hand-written, so
+      // rules that only check user-set values (contrast, font size,
+      // margins) check the built-in design itself.
+      const { extends: _, ...flat } = flattenTheme({ extends: name }).theme;
+      const codes = lint(CV, { theme: flat, fonts }).map((d) => d.code);
+      const sidebar = resolveTheme({ extends: name }).theme.layout.type === "sidebar";
+      expect(codes).toEqual(sidebar ? ["lint/multi-column"] : []);
+    });
+  }
+
+  it("only the classic theme uses the serif, and the DOCX embeds only that family", async () => {
+    const families = (name: string) =>
+      new Set(Object.values(resolveTheme({ extends: name }).theme.fonts).map((f) => f.family));
+    expect(families("classic")).toEqual(new Set(["Source Serif 4"]));
+    for (const name of ["default", "compact", "modern", "sidebar", "sidebar-right"]) {
+      expect(families(name)).toEqual(new Set(["Source Sans 3"]));
+    }
+    const r = await buildDocx(CV, { fonts, theme: { extends: "classic" } });
+    if (!r.docx) throw new Error(JSON.stringify(r.diagnostics));
+    const table = strFromU8(unzipSync(r.docx)["word/fontTable.xml"] as Uint8Array);
+    expect(table).toContain('w:name="Source Serif 4"');
+    expect(table).not.toContain("Source Sans 3");
+    expect(table).toContain('<w:family w:val="roman"/>');
+  });
+
+  it("header.align centers the name, headline and contact line", () => {
+    const ps = build({ header: { align: "center" } });
+    for (const role of ["name", "headline", "contact"]) {
+      expect(ps.find((p) => p.role === role)?.align).toBe("center");
+    }
+    expect(ps.find((p) => p.role === "heading")?.align).toBeUndefined();
+  });
+
+  it("header.nameColor: accent colors the name", () => {
+    const accent = "#7a1f3d";
+    const name = (nameColor?: "text" | "accent") =>
+      build({
+        ...(nameColor ? { header: { nameColor } } : {}),
+        tokens: { colors: { accent } },
+      }).find((p) => p.role === "name")?.runs[0]?.style.color;
+    expect(name("accent")).toBe(accent);
+    expect(name()).toBe("#1a1a1a");
+  });
+
+  it("headings.case: upper capitalizes the heading text itself", () => {
+    const heads = (theme?: Parameters<typeof build>[0]) =>
+      build(theme)
+        .filter((p) => p.role === "heading")
+        .map((p) => p.runs[0]?.text);
+    expect(heads()).toEqual(["Summary", "Experience", "Skills", "Languages"]);
+    expect(heads({ headings: { case: "upper" } })).toEqual([
+      "SUMMARY",
+      "EXPERIENCE",
+      "SKILLS",
+      "LANGUAGES",
+    ]);
+  });
+
+  it("headings.rule picks an underline (default), a bar before the text, or nothing", () => {
+    const heading = (rule?: "underline" | "bar" | "none") =>
+      build(rule ? { headings: { rule } } : undefined).find((p) => p.role === "heading");
+    expect(heading()).toMatchObject({ ruleBelow: { thickness: 0.6 }, indent: 0 });
+    expect(heading()?.bar).toBeUndefined();
+    const bar = heading("bar");
+    expect(bar).toMatchObject({ bar: { width: 3, gap: 6 }, indent: 9 });
+    expect(bar?.ruleBelow).toBeUndefined();
+    const none = heading("none");
+    expect(none?.ruleBelow).toBeUndefined();
+    expect(none?.bar).toBeUndefined();
+  });
+
+  describe("typesetting", () => {
+    const mono: Measurer = {
+      width: (t, s) => [...t].length * s.size * 0.5,
+      ascent: (s) => s.size * 0.8,
+      descent: (s) => s.size * 0.2,
+    };
+    const style: TextStyle = {
+      family: "X",
+      weight: 400,
+      italic: false,
+      size: 10,
+      color: "#000000",
+    };
+    const para = (t: string, over: Partial<Paragraph> = {}): Paragraph => ({
+      kind: "paragraph",
+      role: "body",
+      runs: [{ text: t, style }],
+      indent: 0,
+      spaceBefore: 0,
+      spaceAfter: 0,
+      lineHeight: 1.2,
+      ...over,
+    });
+    const page = (blocks: Block[], photo?: LayoutDocument["photo"]) =>
+      typeset(
+        {
+          meta: { title: "t", author: "a", lang: "en" },
+          page: { width: 220, height: 300, margins: { top: 10, right: 10, bottom: 10, left: 10 } },
+          blocks,
+          regions: { header: blocks, main: [], sidebar: [] },
+          ...(photo ? { photo } : {}),
+        },
+        mono,
+      )[0]?.items ?? [];
+
+    it("centers each line in the frame", () => {
+      const [item] = page([para("abcd", { align: "center" })]);
+      // Frame 10..210, text 4 x 5pt = 20pt wide: starts at 10 + (200 - 20) / 2.
+      expect(item).toMatchObject({ type: "text", x: 100 });
+    });
+
+    it("keeps a centered header centered on the page beside a photo", () => {
+      const photo = {
+        data: new Uint8Array(),
+        format: "png",
+        pixelWidth: 1,
+        pixelHeight: 1,
+        size: 40,
+        shape: "circle",
+        position: "header-right",
+        alt: "a",
+      } as const;
+      const text = page([para("abcd", { align: "center" })], photo).find((i) => i.type === "text");
+      expect(text).toMatchObject({ x: 100 });
+      const left = page([para("abcd")], photo).find((i) => i.type === "text");
+      expect(left).toMatchObject({ x: 10 });
+    });
+
+    it("draws the bar left of the text, as tall as each line", () => {
+      const items = page([
+        para("abcd", { indent: 9, bar: { color: "#0f6e6e", width: 3, gap: 6 } }),
+      ]);
+      expect(items[0]).toMatchObject({
+        type: "rect",
+        x: 10,
+        y: 10,
+        width: 3,
+        height: 12,
+        color: "#0f6e6e",
+      });
+      expect(items[1]).toMatchObject({ type: "text", x: 19 });
+    });
   });
 });
