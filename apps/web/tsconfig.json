@@ -3,11 +3,11 @@
   "compilerOptions": {
     "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "jsx": "react-jsx",
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "noEmit": true,
     "customConditions": ["source"],
     "module": "ESNext",
     "moduleResolution": "Bundler"
   },
-  "include": ["src", "test", "vite.config.ts"]
+  "include": ["src", "test", "e2e", "vite.config.ts", "playwright.config.ts"]
 }

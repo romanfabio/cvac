@@ -349,6 +349,7 @@ npm run lint               # Biome; npm run format applies fixes
 npm run build              # core, fonts, cli, web
 npm run cvac -- lint fixtures/basic/cv.yaml    # the CLI from the TypeScript sources (paths relative to the repo root)
 npm run web                # the web editor dev server
+npm run e2e                # browser tests of the built web editor (needs Google Chrome; run build first)
 ```
 
 - **Golden hashes:** after an intended change to the output, refresh them with `UPDATE_GOLDEN=1 npm test`, and check that only the cases you expected changed.

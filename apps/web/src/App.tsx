@@ -234,7 +234,11 @@ export function App() {
         ) : null}
         {result ? <span>{result.ms} ms</span> : null}
         {hash && (
-          <span title="SHA-256 of the PDF. The same files give the same hash everywhere, including the cvac CLI.">
+          <span
+            className="hash"
+            data-sha256={hash}
+            title="SHA-256 of the PDF. The same files give the same hash everywhere, including the cvac CLI."
+          >
             sha256 {hash.slice(0, 12)}
           </span>
         )}

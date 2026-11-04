@@ -23,3 +23,11 @@ jobs:
       - run: npm run typecheck
       - run: npm run build
       - run: npm test
+      # Browser tests of the built web editor, in the runner's Google Chrome.
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-${{ matrix.os }}
+          path: apps/web/test-results/
+          if-no-files-found: ignore

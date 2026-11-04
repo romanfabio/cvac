@@ -19,7 +19,8 @@
     "lint": "biome check .",
     "format": "biome check --write .",
     "cvac": "node --conditions=source packages/cli/src/bin.ts",
-    "web": "npm run dev -w @cvac/web"
+    "web": "npm run dev -w @cvac/web",
+    "e2e": "npm run e2e -w @cvac/web"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",

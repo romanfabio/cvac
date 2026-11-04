@@ -21,14 +21,25 @@ npm install
 npm test                                   # vitest, all packages and apps
 npx vitest run packages/core/test/pdf.test.ts   # one file
 npm run typecheck                          # tsc per workspace
-npm run lint                               # biome check (npm run format applies fixes)
+npm run lint                               # biome check, not .md files (npm run format applies fixes)
 npm run build                              # core -> fonts -> cli -> web (order matters)
 npm run cvac -- lint fixtures/basic/cv.yaml    # CLI from TS sources; cwd is the repo root
 npm run web                                # web editor dev server, http://localhost:5173
 UPDATE_GOLDEN=1 npm test                   # rewrite golden hashes (see Determinism)
+npm run e2e                                # Playwright tests of the built web editor (after build)
 ```
 
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `npm ci`, `lint`, `typecheck`, `build` and `test` on Linux, Windows and macOS. Run the same four before declaring work done.
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `npm ci`, `lint`, `typecheck`, `build`, `test` and `e2e` on Linux, Windows and macOS. Run the same before declaring work done.
+
+**End-to-end tests** (`apps/web/e2e/`, config in `apps/web/playwright.config.ts`):
+
+- **What they run against:** `vite preview` of `apps/web/dist` on port 4174, on a desktop and a phone viewport.
+- **Browser:** the installed Google Chrome (`channel: "chrome"`), so no Playwright browser download is needed.
+- **What they check:**
+  - the starter CV's PDF hash (the status bar's `data-sha256`) and DOCX download hash equal the CLI's
+  - errors show while editing
+  - edits persist across a reload
+  - the phone layout has no horizontal scroll
 
 ## Pipeline and where code lives
 
