@@ -41,6 +41,20 @@ export async function savePhoto(key: string, data: Uint8Array): Promise<void> {
   }
 }
 
+/** Replace every saved photo (project import). Rejects when the browser refuses. */
+export async function replacePhotos(photos: Record<string, Uint8Array>): Promise<void> {
+  const db = await openDb();
+  try {
+    const tx = db.transaction(STORE, "readwrite");
+    const store = tx.objectStore(STORE);
+    store.clear();
+    for (const [key, data] of Object.entries(photos)) store.put(data, key);
+    await done(tx);
+  } finally {
+    db.close();
+  }
+}
+
 /**
  * All saved photos, after moving any left in localStorage by older versions
  * into IndexedDB. Resolves to what could be read; never rejects.

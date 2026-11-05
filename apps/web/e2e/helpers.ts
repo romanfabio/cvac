@@ -49,6 +49,33 @@ export function cliHashes(inputs: CliInputs = {}): { pdf: string; docx: string }
   }
 }
 
+/** Build `dir/cv.yaml` (with `dir/theme.yaml`, if any) with the CLI; hashes of the outputs. */
+export function cliBuild(dir: string): { pdf: string; docx: string } {
+  const out = mkdtempSync(join(tmpdir(), "cvac-e2e-out-"));
+  try {
+    execFileSync(
+      process.execPath,
+      [
+        "--conditions=source",
+        join(ROOT, "packages/cli/src/bin.ts"),
+        "build",
+        join(dir, "cv.yaml"),
+        "--format",
+        "all",
+        "--out",
+        out,
+      ],
+      { stdio: "pipe" },
+    );
+    return {
+      pdf: sha256(readFileSync(join(out, "cv.pdf"))),
+      docx: sha256(readFileSync(join(out, "cv.docx"))),
+    };
+  } finally {
+    rmSync(out, { recursive: true, force: true });
+  }
+}
+
 /** Open the editor and wait for the first clean build. */
 export async function open(page: Page) {
   await page.goto("/");

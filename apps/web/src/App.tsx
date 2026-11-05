@@ -1,10 +1,18 @@
-import { BUILTIN_THEME_NAMES, type Diagnostic, STARTER_CV, STARTER_THEME } from "@cvac/core/editor";
+import {
+  BUILTIN_THEME_NAMES,
+  contentJsonSchema,
+  type Diagnostic,
+  STARTER_CV,
+  STARTER_THEME,
+  themeJsonSchema,
+} from "@cvac/core/editor";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Editor, type EditorHandle } from "./Editor.tsx";
 import type { BuildRequest, BuildResult } from "./engine.ts";
 import { CV_FILE, THEME_FILE } from "./files.ts";
 import { Preview } from "./Preview.tsx";
-import { loadPhotos, savePhoto } from "./photoStore.ts";
+import { loadPhotos, replacePhotos, savePhoto } from "./photoStore.ts";
+import { exportProject, importProject, PROJECT_FILE } from "./project.ts";
 import { load, save } from "./storage.ts";
 import { readExtends, setExtends } from "./themeFile.ts";
 
@@ -21,7 +29,9 @@ export function App() {
   // Photos load asynchronously (IndexedDB); the first build waits for them,
   // so a saved photo never flashes a "photo not found" error.
   const [assets, setAssets] = useState<Record<string, Uint8Array>>();
-  const [photoNotice, setPhotoNotice] = useState("");
+  /** A problem the user should know about (saving the photo, export, import). */
+  const [notice, setNotice] = useState("");
+  const importInput = useRef<HTMLInputElement>(null);
   const [result, setResult] = useState<BuildResult>();
   const [pdf, setPdf] = useState<Uint8Array>();
   const [hash, setHash] = useState("");
@@ -101,16 +111,60 @@ export function App() {
     const r = format === "pdf" && result?.bytes && pdf ? { bytes: pdf } : await request(format);
     if (!r.bytes) return;
     const parts = ["cv", variant, locale].filter(Boolean).join(".");
-    const type =
+    saveFile(
+      r.bytes,
+      `${parts}.${format}`,
       format === "pdf"
         ? "application/pdf"
-        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
-    const url = URL.createObjectURL(new Blob([r.bytes as BlobPart], { type }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${parts}.${format}`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    );
+  };
+
+  const exportZip = () => {
+    const path = result?.photo;
+    const data = path ? assets?.[path] : undefined;
+    const r = exportProject({
+      cv: files[CV_FILE] ?? "",
+      theme: files[THEME_FILE] ?? "",
+      ...(path && data ? { photo: { path, data } } : {}),
+      schemas: { cv: contentJsonSchema(), theme: themeJsonSchema() },
+    });
+    saveFile(r.zip, PROJECT_FILE, "application/zip");
+    setNotice(
+      r.skipped
+        ? `Exported without the photo: ${r.skipped}.`
+        : path && !data
+          ? `Exported without the photo: choose the file for ${path} first.`
+          : "",
+    );
+  };
+
+  const importZip = async (file: File | undefined) => {
+    if (!file) return;
+    let project: ReturnType<typeof importProject>;
+    try {
+      project = importProject(new Uint8Array(await file.arrayBuffer()));
+    } catch (e) {
+      setNotice(`Could not import ${file.name}: ${e instanceof Error ? e.message : String(e)}.`);
+      return;
+    }
+    if (!confirm(`Replace cv.yaml, theme.yaml and the photo with the ones in ${file.name}?`)) {
+      return;
+    }
+    setFiles({ [CV_FILE]: project.cv, [THEME_FILE]: project.theme });
+    save(CV_FILE, project.cv);
+    save(THEME_FILE, project.theme);
+    setAssets(project.photos);
+    try {
+      await replacePhotos(project.photos);
+      setNotice("");
+    } catch {
+      setNotice(
+        Object.keys(project.photos).length
+          ? "This browser could not save the photo: it is used now, but will be gone after a reload."
+          : "",
+      );
+    }
   };
 
   const onPhoto = async (file: File | undefined) => {
@@ -120,9 +174,9 @@ export function App() {
     setAssets((a) => ({ ...a, [key]: bytes }));
     try {
       await savePhoto(key, bytes);
-      setPhotoNotice("");
+      setNotice("");
     } catch {
-      setPhotoNotice(
+      setNotice(
         "This browser could not save the photo: it is used now, but will be gone after a reload.",
       );
     }
@@ -208,6 +262,33 @@ export function App() {
           <button type="button" onClick={() => download("docx")} disabled={errors > 0}>
             Download DOCX
           </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={exportZip}
+            title="Download cv.yaml, theme.yaml and the photo as a .zip (cvac build works on the unzipped folder)"
+          >
+            Export
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => importInput.current?.click()}
+            title="Open a project .zip exported here, or a zipped folder with cv.yaml"
+          >
+            Import
+          </button>
+          <input
+            ref={importInput}
+            type="file"
+            accept=".zip,application/zip"
+            aria-label="Import a project (.zip)"
+            hidden
+            onChange={(e) => {
+              void importZip(e.target.files?.[0]);
+              e.target.value = ""; // the same file can be imported again
+            }}
+          />
           <button type="button" className="secondary" onClick={reset}>
             Reset
           </button>
@@ -280,9 +361,9 @@ export function App() {
             sha256 {hash.slice(0, 12)}
           </span>
         )}
-        {photoNotice && (
+        {notice && (
           <span className="notice" role="alert">
-            {photoNotice}
+            {notice}
           </span>
         )}
         <span className="privacy">Runs entirely in your browser. Nothing is uploaded.</span>
@@ -317,6 +398,16 @@ function Problems({ diags, onPick }: { diags: Diagnostic[]; onPick(d: Diagnostic
       ))}
     </ul>
   );
+}
+
+/** Hand bytes to the browser as a file download. */
+function saveFile(bytes: Uint8Array, name: string, type: string) {
+  const url = URL.createObjectURL(new Blob([bytes as BlobPart], { type }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 async function sha256(bytes: Uint8Array): Promise<string> {

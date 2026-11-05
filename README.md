@@ -332,6 +332,7 @@ The built page carries a Content-Security-Policy that lets it fetch only its own
 - `cv.yaml` and `theme.yaml` each have a tab, with schema-based completion. cvac's diagnostics appear inline and in a problems list; clicking one jumps to the line.
 - The toolbar picks the built-in theme (it rewrites `extends:` in `theme.yaml`, so your other settings stay), the language and the variant, sets the photo file, and downloads the PDF or DOCX.
 - The status bar shows the page count, build time and the PDF's SHA-256. It matches `cvac build` for the same files.
+- **Export** downloads `cv-project.zip`: `cv.yaml`, `theme.yaml`, the photo at the path `basics.photo` gives, and the editor schemas in `.cvac/schemas/`, the same layout `cvac init` creates. `cvac build` works on the unzipped folder. **Import** opens such a zip, or any zipped folder with a `cv.yaml`, and replaces the editor's files and photo after asking. Browsers can clear their storage, so export to keep a copy of your work or to move it to another device.
 
 `npm run build` also produces a static site in `apps/web/dist` that any static host can serve. In the web editor, `extends` can only name a built-in theme.
 
