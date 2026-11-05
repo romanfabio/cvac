@@ -11,6 +11,7 @@ export const LINT_RULE_IDS = [
   "no-skills",
   "empty-section",
   "photo",
+  "large-photo",
   "emoji",
   "missing-glyphs",
   "small-font",

@@ -206,6 +206,7 @@ export async function build(cv: string | undefined, flags: BuildFlags): Promise<
         outcome.diagnostics.push(
           ...lint(inputs.content, {
             fonts,
+            assets: inputs.assets,
             ...(inputs.theme ? { theme: inputs.theme } : {}),
             ...(lang ? { locale: lang } : {}),
             ...(variant ? { variant } : {}),

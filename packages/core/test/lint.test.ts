@@ -111,6 +111,21 @@ describe("lint rules", () => {
     ).toEqual(["photo"]);
   });
 
+  it("large-photo: flags photos over 1 MB, when the photo bytes are given", () => {
+    const c = cv(CLEAN.replace("  title: Engineer\n", "  title: Engineer\n  photo: me.jpg\n"));
+    const assets = (n: number) => ({ "me.jpg": new Uint8Array(n) });
+    expect(codes(c, { assets: assets(1_000_000) })).toEqual(["photo"]);
+    expect(codes(c)).toEqual(["photo"]);
+    const ds = lint(c, { assets: assets(4_200_000) }).filter((d) => d.code === "lint/large-photo");
+    expect(ds).toMatchObject([
+      {
+        severity: "warning",
+        message: expect.stringContaining("4.2 MB"),
+        path: ["basics", "photo"],
+      },
+    ]);
+  });
+
   it("emoji and missing-glyphs report the field and the characters", () => {
     const c = cv(
       CLEAN.replace("role: Dev", 'role: "Dev 🚀"').replace("name: Cloud", 'name: "Cloud ⟁ 漢"'),

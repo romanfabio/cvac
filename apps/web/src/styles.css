@@ -279,6 +279,11 @@ button:disabled {
   font-size: 12px;
 }
 
+.status .notice {
+  color: var(--warning);
+  font-weight: 600;
+}
+
 .status .privacy {
   margin-left: auto;
 }

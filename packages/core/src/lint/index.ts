@@ -20,6 +20,8 @@ export interface LintOptions {
   fonts?: FontSet;
   /** PDF page count, if known (enables the length rule). */
   pages?: number;
+  /** Files the CV refers to, keyed as written (enables the photo-size rule). */
+  assets?: Readonly<Record<string, Uint8Array>>;
 }
 
 export interface RuleInfo {
@@ -49,6 +51,7 @@ export function lint(content: Content, opts: LintOptions = {}): Diagnostic[] {
     resolvedTheme: resolveTheme(opts.theme).theme,
     fonts: opts.fonts,
     pages: opts.pages,
+    assets: opts.assets,
   };
   const out: Diagnostic[] = [];
   for (const rule of RULES) {

@@ -4,7 +4,8 @@ import { Editor, type EditorHandle } from "./Editor.tsx";
 import type { BuildRequest, BuildResult } from "./engine.ts";
 import { CV_FILE, THEME_FILE } from "./files.ts";
 import { Preview } from "./Preview.tsx";
-import { fromBase64, load, save, toBase64 } from "./storage.ts";
+import { loadPhotos, savePhoto } from "./photoStore.ts";
+import { load, save } from "./storage.ts";
 import { readExtends, setExtends } from "./themeFile.ts";
 
 const DEBOUNCE_MS = 250;
@@ -17,7 +18,10 @@ export function App() {
   const [active, setActive] = useState(CV_FILE);
   const [locale, setLocale] = useState(() => load("locale") ?? "");
   const [variant, setVariant] = useState(() => load("variant") ?? "");
-  const [assets, setAssets] = useState<Record<string, Uint8Array>>(() => loadPhotos());
+  // Photos load asynchronously (IndexedDB); the first build waits for them,
+  // so a saved photo never flashes a "photo not found" error.
+  const [assets, setAssets] = useState<Record<string, Uint8Array>>();
+  const [photoNotice, setPhotoNotice] = useState("");
   const [result, setResult] = useState<BuildResult>();
   const [pdf, setPdf] = useState<Uint8Array>();
   const [hash, setHash] = useState("");
@@ -43,6 +47,14 @@ export function App() {
     };
   }, []);
 
+  useEffect(() => {
+    let live = true;
+    loadPhotos().then((photos) => live && setAssets((a) => ({ ...photos, ...a })));
+    return () => {
+      live = false;
+    };
+  }, []);
+
   const request = useCallback(
     (format: "pdf" | "docx") =>
       new Promise<BuildResult>((resolve) => {
@@ -53,7 +65,7 @@ export function App() {
           format,
           cv: files[CV_FILE] ?? "",
           theme: files[THEME_FILE] ?? "",
-          assets,
+          assets: assets ?? {},
           ...(locale ? { locale } : {}),
           ...(variant ? { variant } : {}),
         };
@@ -64,7 +76,7 @@ export function App() {
 
   // Live preview: rebuild the PDF shortly after the last change.
   useEffect(() => {
-    if (!worker) return;
+    if (!worker || !assets) return;
     setBusy(true);
     const timer = setTimeout(async () => {
       const id = seq.current + 1;
@@ -78,7 +90,7 @@ export function App() {
       }
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [request, worker]);
+  }, [request, worker, assets]);
 
   const onChange = useCallback((file: string, text: string) => {
     setFiles((f) => (f[file] === text ? f : { ...f, [file]: text }));
@@ -104,8 +116,16 @@ export function App() {
   const onPhoto = async (file: File | undefined) => {
     if (!file || !result?.photo) return;
     const bytes = new Uint8Array(await file.arrayBuffer());
-    setAssets((a) => ({ ...a, [result.photo as string]: bytes }));
-    save(`photo:${result.photo}`, toBase64(bytes));
+    const key = result.photo;
+    setAssets((a) => ({ ...a, [key]: bytes }));
+    try {
+      await savePhoto(key, bytes);
+      setPhotoNotice("");
+    } catch {
+      setPhotoNotice(
+        "This browser could not save the photo: it is used now, but will be gone after a reload.",
+      );
+    }
   };
 
   const reset = () => {
@@ -129,7 +149,7 @@ export function App() {
 
   const diags = result?.diagnostics ?? [];
   const errors = diags.filter((d) => d.severity === "error").length;
-  const missingPhoto = result?.photo !== undefined && !assets[result.photo];
+  const missingPhoto = result?.photo !== undefined && !assets?.[result.photo];
 
   return (
     <div className="app">
@@ -260,6 +280,11 @@ export function App() {
             sha256 {hash.slice(0, 12)}
           </span>
         )}
+        {photoNotice && (
+          <span className="notice" role="alert">
+            {photoNotice}
+          </span>
+        )}
         <span className="privacy">Runs entirely in your browser. Nothing is uploaded.</span>
       </footer>
     </div>
@@ -292,21 +317,6 @@ function Problems({ diags, onPick }: { diags: Diagnostic[]; onPick(d: Diagnostic
       ))}
     </ul>
   );
-}
-
-function loadPhotos(): Record<string, Uint8Array> {
-  const out: Record<string, Uint8Array> = {};
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (!key?.startsWith("cvac:photo:")) continue;
-      const v = localStorage.getItem(key);
-      if (v) out[key.slice("cvac:photo:".length)] = fromBase64(v);
-    }
-  } catch {
-    // storage unavailable
-  }
-  return out;
 }
 
 async function sha256(bytes: Uint8Array): Promise<string> {

@@ -1,53 +1,11 @@
-import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
-import { expect, type Page, test } from "@playwright/test";
-
-const ROOT = resolve(import.meta.dirname, "../../..");
-const sha256 = (bytes: Buffer) => createHash("sha256").update(bytes).digest("hex");
-
-/**
- * Build the starter CV with the real CLI (from sources), to compare hashes.
- * `editTheme` rewrites the starter theme.yaml first.
- */
-function cliHashes(editTheme?: (starter: string) => string): { pdf: string; docx: string } {
-  const dir = mkdtempSync(join(tmpdir(), "cvac-e2e-"));
-  try {
-    const cli = (...args: string[]) =>
-      execFileSync(
-        process.execPath,
-        ["--conditions=source", join(ROOT, "packages/cli/src/bin.ts"), ...args],
-        { cwd: dir, stdio: "pipe" },
-      );
-    cli("init");
-    if (editTheme) {
-      const file = join(dir, "theme.yaml");
-      writeFileSync(file, editTheme(readFileSync(file, "utf8")));
-    }
-    cli("build", "cv.yaml", "--format", "all", "--out", "out");
-    return {
-      pdf: sha256(readFileSync(join(dir, "out/cv.pdf"))),
-      docx: sha256(readFileSync(join(dir, "out/cv.docx"))),
-    };
-  } finally {
-    rmSync(dir, { recursive: true, force: true });
-  }
-}
+import { readFileSync } from "node:fs";
+import { expect, test } from "@playwright/test";
+import { cliHashes, hash, open, sha256 } from "./helpers.ts";
 
 let expected: { pdf: string; docx: string };
 test.beforeAll(() => {
   expected = cliHashes();
 });
-
-async function open(page: Page) {
-  await page.goto("/");
-  await expect(page.locator(".status")).toContainText("Up to date");
-  await expect(page.locator(".preview canvas.page").first()).toBeVisible();
-}
-
-const hash = (page: Page) => page.locator(".status .hash");
 
 test("previews the starter CV with the same PDF bytes as the CLI", async ({ page }) => {
   await open(page);
@@ -63,7 +21,7 @@ test("a built-in serif theme gives the CLI's bytes, loading its font on demand",
   page,
 }) => {
   const theme = "version: 1\nextends: classic\n";
-  const cli = cliHashes(() => theme);
+  const cli = cliHashes({ theme: () => theme });
   await page.addInitScript((t) => localStorage.setItem("cvac:theme.yaml", t), theme);
   const fonts: string[] = [];
   page.on("request", (r) => {
@@ -82,7 +40,7 @@ test("a built-in serif theme gives the CLI's bytes, loading its font on demand",
 });
 
 test("the theme picker rewrites extends: in theme.yaml", async ({ page }) => {
-  const cli = cliHashes((t) => t.replace("extends: default", "extends: modern"));
+  const cli = cliHashes({ theme: (t) => t.replace("extends: default", "extends: modern") });
   await open(page);
   const picker = page.getByLabel("Theme");
   await expect(picker).toHaveValue("default");

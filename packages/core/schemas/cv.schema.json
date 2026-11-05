@@ -110,6 +110,15 @@
                 "error"
               ]
             },
+            "large-photo": {
+              "type": "string",
+              "enum": [
+                "off",
+                "info",
+                "warning",
+                "error"
+              ]
+            },
             "emoji": {
               "type": "string",
               "enum": [

@@ -18,6 +18,8 @@ export interface LintContext {
   fonts: FontSet | undefined;
   /** PDF page count, when the caller built one. */
   pages: number | undefined;
+  /** Files the CV refers to (the photo), when the caller has them. */
+  assets: Readonly<Record<string, Uint8Array>> | undefined;
 }
 
 export type Finding = Omit<Diagnostic, "severity" | "code">;
@@ -514,6 +516,29 @@ const tooLong: Rule = {
       : [],
 };
 
+/** Above this the photo, embedded as is in both formats, dominates the file size. */
+const LARGE_PHOTO_BYTES = 1_000_000;
+
+const largePhoto: Rule = {
+  id: "large-photo",
+  level: "warning",
+  summary:
+    "The photo is embedded as is: a large one makes both files large, and job portals often cap uploads at 2-5 MB.",
+  check: ({ content, assets }) => {
+    const path = content.basics.photo;
+    const data = path ? assets?.[path] : undefined;
+    if (!data || data.length <= LARGE_PHOTO_BYTES) return [];
+    return [
+      {
+        message: `The photo is ${(data.length / 1_000_000).toFixed(1)} MB, and the PDF and DOCX each grow by that much`,
+        help: "Resize it to about 600 x 600 pixels and save it as JPEG; that is usually under 200 KB",
+        path: ["basics", "photo"],
+        origin: "content",
+      },
+    ];
+  },
+};
+
 export const RULES: readonly Rule[] = [
   nonstandardHeading,
   missingDates,
@@ -524,6 +549,7 @@ export const RULES: readonly Rule[] = [
   noSkills,
   emptySection,
   photo,
+  largePhoto,
   emoji,
   missingGlyphsRule,
   smallFont,

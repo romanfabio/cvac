@@ -138,6 +138,8 @@ The CLI (`packages/cli/src`) reads files (`inputs.ts`: the CV, the theme chain i
 
 - **Line endings:** files must be LF (`.gitattributes` enforces it in git). Python on Windows writes CRLF in text mode; use `open(..., newline="")`. `git ls-files | xargs grep -lU $'\r'` finds offenders.
 - **Checking DOCX rendering:** LibreOffice ignored the embedded Source Serif 4 here and substituted other fonts, while Word rendered it correctly. Check font-related DOCX changes in Word (it can be driven read-only through COM from PowerShell: `Documents.Open(path, $false, $true)`, then `ExportAsFixedFormat(pdf, 17)`).
+- **CSP and zod:** the built web page has a Content-Security-Policy without `eval` (`apps/web/vite.config.ts`). zod probes `new Function` when a schema is created unless `jitless` is set, which the browser reports as a violation. `apps/web/src/zodConfig.ts` sets it and must stay the first import of `main.tsx`. `e2e/csp.spec.ts` fails on any violation.
+- **Photos in the web editor** live in IndexedDB (`photoStore.ts`), not `localStorage` (about 5 MB, as text). Never re-encode or resize them in the browser: browser encoders differ, and the bytes would no longer match the CLI.
 - **Web worker lifetime:** create workers inside a `useEffect` and terminate them in its cleanup. React StrictMode runs effects twice in dev.
 - **Preview sizing:** don't rely only on `ResizeObserver` or `requestAnimationFrame` for first-paint sizing; measure on mount. Callbacks don't fire in background tabs.
 - **YAML completion** works by indentation on possibly-invalid text. Test new cases on realistic documents with several list items (`apps/web/test/complete.test.ts`), not one-liners.

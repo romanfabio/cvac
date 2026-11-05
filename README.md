@@ -246,6 +246,7 @@ The photo is cover-cropped to the chosen shape in both formats. `photo: { show: 
 | `no-skills` | note | No skills section |
 | `empty-section` | warning | Sections with no items, which disappear from the output |
 | `photo` | warning | A photo, which many ATS drop and some countries discourage |
+| `large-photo` | warning | A photo over 1 MB, which makes the PDF and DOCX just as large |
 | `emoji` | warning | Emoji and pictographs |
 | `missing-glyphs` | error | Characters the font cannot draw |
 | `small-font` | warning | Text below 9pt |
@@ -324,7 +325,9 @@ Exit codes are `0` for success, `1` for problems in your files and `2` for wrong
 npm run web        # http://localhost:5173
 ```
 
-The editor rebuilds your CV in a Web Worker as you type, with the same core code as the CLI. Nothing is uploaded: your files and photo stay in the browser, which saves them locally.
+The editor rebuilds your CV in a Web Worker as you type, with the same core code as the CLI. Nothing is uploaded, whether you run it locally or from a website: the photo is read from your computer by the browser, and your files and photo are saved in that browser only (the YAML in `localStorage`, the photo in IndexedDB, which has room for large photos). If the browser refuses to save the photo, for example in some private windows, the status bar says so: it is still used, until you reload.
+
+The built page carries a Content-Security-Policy that lets it fetch only its own files, so the browser itself blocks any attempt to send data elsewhere. Static hosts such as GitHub Pages cannot set headers, so the policy is a `<meta>` tag, which does not reach the build worker; a host that can set headers should send the same policy (in [`apps/web/vite.config.ts`](apps/web/vite.config.ts)) for every file.
 
 - `cv.yaml` and `theme.yaml` each have a tab, with schema-based completion. cvac's diagnostics appear inline and in a problems list; clicking one jumps to the line.
 - The toolbar picks the built-in theme (it rewrites `extends:` in `theme.yaml`, so your other settings stay), the language and the variant, sets the photo file, and downloads the PDF or DOCX.
