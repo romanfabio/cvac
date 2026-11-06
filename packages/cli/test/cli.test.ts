@@ -1,5 +1,13 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -22,7 +30,9 @@ const sha = (p: string) => createHash("sha256").update(readFileSync(p)).digest("
 let dir: string;
 let cwd: string;
 beforeEach(() => {
-  dir = mkdtempSync(join(tmpdir(), "cvac-cli-"));
+  // The real path: on macOS the temp folder is under /var, a symlink to
+  // /private/var, and process.cwd() (used to resolve --out) reports the latter.
+  dir = realpathSync(mkdtempSync(join(tmpdir(), "cvac-cli-")));
   cwd = process.cwd();
   process.chdir(dir);
 });
