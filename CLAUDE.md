@@ -40,7 +40,7 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `npm ci`, `lint
 - **What they check:**
   - `editor.spec.ts`: the PDF hash (the status bar's `data-sha256`) and every download's hash (DOCX, Markdown, text, through the download menu) equal the CLI's, the download menu works from the keyboard, also for a serif theme and after the theme picker; errors show while editing; edits persist across a reload; fonts load per family; the phone layout has no horizontal scroll
   - `photo.spec.ts`: Add photo writes `basics.photo` into the starter CV and matches the CLI, Remove photo takes it out and deletes the image; photos persist in IndexedDB (including over 4 MB), old `localStorage` photos are migrated, a failed save is reported
-  - `project.spec.ts`: import of a zipped folder, and `cvac build` on an unzipped export gives the editor's bytes
+  - `project.spec.ts`: the Project menu (Import opens the file picker, Reset asks and restores the starter), import of a zipped folder, and `cvac build` on an unzipped export gives the editor's bytes
   - `csp.spec.ts`: cross-site requests are blocked and normal use causes no CSP violations
   - `site.spec.ts`: the footer's `licenses.txt` lists the fonts and the bundled packages; every request stays inside the base path
 - **Navigation:** tests open `./`, never `/`, so they work under a base path (`baseURL` includes `CVAC_BASE`).
@@ -74,7 +74,8 @@ The web app (`apps/web/src`):
 | File | Role |
 | --- | --- |
 | `App.tsx` | Toolbar, panes, status bar; owns the build worker |
-| `DownloadMenu.tsx` | Split download button: PDF, plus a menu (WAI-ARIA menu button) with every format |
+| `Menu.tsx` | `MenuButton`: a WAI-ARIA menu button (keyboard, Escape, outside click, opens on the side with room), optionally split with a main action |
+| `DownloadMenu.tsx` | Split download button: PDF, plus a menu with every format. The Project menu (Export, Import, Reset) is a `MenuButton` in `App.tsx` |
 | `engine.ts`, `worker.ts` | All core calls (parse, build, lint), in the worker. `engine.ts` is pure and tested in Node; the worker fetches font families on demand |
 | `Editor.tsx`, `complete.ts` | CodeMirror 6 with cvac's diagnostics and schema-driven YAML completion |
 | `Preview.tsx` | pdf.js rendering of the PDF |

@@ -39,6 +39,35 @@ test("imports a zipped project folder, photo included, and keeps it after a relo
   await expect(page.locator(".problems")).not.toContainText("Cannot find the photo");
 });
 
+test("the Project menu opens the file picker for Import, and Reset restores the starter", async ({
+  page,
+}) => {
+  await open(page);
+  const project = page.getByRole("button", { name: "Project" });
+  await project.click();
+  await expect(page.getByRole("menuitem")).toHaveText([/^Export/, /^Import/, /^Reset/]);
+  const [chooser] = await Promise.all([
+    page.waitForEvent("filechooser"),
+    page.getByRole("menuitem", { name: /^Import/ }).click(),
+  ]);
+  expect(chooser.isMultiple()).toBe(false);
+  await expect(page.getByRole("menu")).toHaveCount(0);
+
+  const before = await hash(page).getAttribute("data-sha256");
+  await page.getByLabel("Theme").selectOption("classic");
+  await expect(hash(page)).not.toHaveAttribute("data-sha256", before ?? "");
+
+  page.once("dialog", (d) => d.dismiss());
+  await project.click();
+  await page.getByRole("menuitem", { name: /^Reset/ }).click();
+  await expect(hash(page)).not.toHaveAttribute("data-sha256", before ?? "");
+
+  page.once("dialog", (d) => d.accept());
+  await project.click();
+  await page.getByRole("menuitem", { name: /^Reset/ }).click();
+  await expect(hash(page)).toHaveAttribute("data-sha256", before ?? "");
+});
+
 test("exports a project that `cvac build` turns into the same files", async ({ page }) => {
   page.on("dialog", (d) => d.accept());
   await open(page);
@@ -47,9 +76,10 @@ test("exports a project that `cvac build` turns into the same files", async ({ p
   const webPdf = cliBuild(SIDEBAR).pdf;
   await expect(hash(page)).toHaveAttribute("data-sha256", webPdf);
 
+  await page.getByRole("button", { name: "Project" }).click();
   const [download] = await Promise.all([
     page.waitForEvent("download"),
-    page.getByRole("button", { name: "Export" }).click(),
+    page.getByRole("menuitem", { name: /^Export/ }).click(),
   ]);
   expect(download.suggestedFilename()).toBe("cv-project.zip");
   const files = unzipSync(new Uint8Array(readFileSync(await download.path())));

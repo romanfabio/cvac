@@ -142,10 +142,16 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Download split button: PDF on the left, the format menu on the arrow. */
-.split {
+/* Menu buttons (Menu.tsx); the download one is a split button. */
+.menu-button {
   position: relative;
   display: inline-flex;
+}
+
+button.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .split-main {
@@ -200,6 +206,12 @@ button:disabled {
 .menu button:focus-visible {
   background: color-mix(in srgb, var(--accent) 14%, transparent);
   outline: none;
+}
+
+.menu-separator {
+  height: 1px;
+  margin: 4px 6px;
+  background: var(--border);
 }
 
 .menu-hint {

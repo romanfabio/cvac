@@ -167,7 +167,7 @@ test("fits a phone screen without horizontal scrolling", async ({ page }, info) 
   expect(canvas.width).toBeGreaterThan(viewport.width * 0.8);
   expect(canvas.x + canvas.width).toBeLessThanOrEqual(viewport.width);
   await expect(page.locator(".editor .cm-content")).toBeVisible();
-  for (const name of ["Download PDF", "More download formats"]) {
+  for (const name of ["Project", "Download PDF", "More download formats"]) {
     const b = await page.getByRole("button", { name }).boundingBox();
     expect(b && b.x + b.width).toBeLessThanOrEqual(viewport.width);
   }

@@ -12,6 +12,7 @@ import { DownloadMenu } from "./DownloadMenu.tsx";
 import { Editor, type EditorHandle } from "./Editor.tsx";
 import type { BuildRequest, BuildResult, OutputFormat } from "./engine.ts";
 import { CV_FILE, THEME_FILE } from "./files.ts";
+import { Chevron, MenuButton } from "./Menu.tsx";
 import { Preview } from "./Preview.tsx";
 import { deletePhoto, loadPhotos, replacePhotos, savePhoto } from "./photoStore.ts";
 import { exportProject, importProject, PROJECT_FILE } from "./project.ts";
@@ -311,22 +312,35 @@ export function App() {
               Remove photo
             </button>
           )}
-          <button
-            type="button"
-            className="secondary"
-            onClick={exportZip}
-            title="Download cv.yaml, theme.yaml and the photo as a .zip (cvac build works on the unzipped folder)"
+          <MenuButton
+            menuLabel="Project"
+            toggleClass="secondary toggle"
+            toggleTitle="Export, import or reset your CV files"
+            items={[
+              {
+                id: "export",
+                label: "Export (.zip)",
+                hint: "Back up cv.yaml, theme.yaml and the photo; cvac build works on it",
+                onSelect: exportZip,
+              },
+              {
+                id: "import",
+                label: "Import (.zip)…",
+                hint: "Open an exported project, or a zipped folder with cv.yaml",
+                // Runs inside the click, so the browser opens the file picker.
+                onSelect: () => importInput.current?.click(),
+              },
+              {
+                id: "reset",
+                label: "Reset…",
+                hint: "Start over from the starter CV and theme",
+                separated: true,
+                onSelect: reset,
+              },
+            ]}
           >
-            Export
-          </button>
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => importInput.current?.click()}
-            title="Open a project .zip exported here, or a zipped folder with cv.yaml"
-          >
-            Import
-          </button>
+            Project <Chevron />
+          </MenuButton>
           <input
             ref={importInput}
             type="file"
@@ -338,9 +352,6 @@ export function App() {
               e.target.value = ""; // the same file can be imported again
             }}
           />
-          <button type="button" className="secondary" onClick={reset}>
-            Reset
-          </button>
           {/* The results last, at the right end of the toolbar. */}
           <DownloadMenu
             onDownload={(f) => void download(f)}
