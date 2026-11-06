@@ -6,6 +6,7 @@ import type { LayoutDocument } from "./layout/ir.ts";
 import type { Content } from "./model/content.ts";
 import type { Theme } from "./model/theme.ts";
 import { renderDocx } from "./render/docx/render.ts";
+import { renderHtml } from "./render/html/render.ts";
 import { renderPdf } from "./render/pdf/render.ts";
 import { renderMarkdown, renderText } from "./render/text/render.ts";
 import { resolveLocale } from "./resolve/locale.ts";
@@ -135,6 +136,23 @@ export function buildMarkdown(content: Content, opts: LayoutOptions = {}): Build
   const l = layout(content, { ...opts, linear: true });
   if (!l.layout) return { diagnostics: l.diagnostics };
   return { text: renderMarkdown(l.layout), diagnostics: l.diagnostics };
+}
+
+export interface BuildHtmlOptions extends LayoutOptions {
+  fonts: FontSet;
+}
+
+/**
+ * Parsed content -> one self-contained HTML page. It follows the theme,
+ * columns and photo included, with the fonts embedded as subsets of the
+ * characters used; the text reads in the PDF's order.
+ */
+export function buildHtml(content: Content, opts: BuildHtmlOptions): BuildTextResult {
+  const l = layout(content, opts);
+  if (!l.layout) return { diagnostics: l.diagnostics };
+  const r = renderHtml(l.layout, { fonts: opts.fonts });
+  const diagnostics = [...l.diagnostics, ...r.diagnostics];
+  return hasErrors(r.diagnostics) ? { diagnostics } : { text: r.html, diagnostics };
 }
 
 /** Parsed content -> plain text, one column in CV order (see `buildMarkdown`). */

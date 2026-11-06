@@ -18,11 +18,11 @@ export interface CliInputs {
 }
 
 /** SHA-256 of each output format. */
-export type Hashes = Record<"pdf" | "docx" | "md" | "txt", string>;
+export type Hashes = Record<"pdf" | "docx" | "html" | "md" | "txt", string>;
 
 const hashesIn = (dir: string): Hashes => {
   const h = (ext: string) => sha256(readFileSync(join(dir, `cv.${ext}`)));
-  return { pdf: h("pdf"), docx: h("docx"), md: h("md"), txt: h("txt") };
+  return { pdf: h("pdf"), docx: h("docx"), html: h("html"), md: h("md"), txt: h("txt") };
 };
 
 /** Build the starter CV with the real CLI (from sources), to compare hashes. */
@@ -86,7 +86,13 @@ export async function open(page: Page) {
 }
 
 /** The menu entry of each format, as the download menu labels it. */
-const MENU_LABEL = { pdf: /^PDF/, docx: /^Word/, md: /^Markdown/, txt: /^Plain text/ };
+const MENU_LABEL = {
+  pdf: /^PDF/,
+  docx: /^Word/,
+  html: /^Web page/,
+  md: /^Markdown/,
+  txt: /^Plain text/,
+};
 
 /** Download a format through the menu on the download button's arrow. */
 export async function downloadAs(page: Page, format: keyof typeof MENU_LABEL): Promise<Download> {

@@ -5,6 +5,7 @@ import { Chevron, MenuButton } from "./Menu.tsx";
 export const DOWNLOADS: { format: OutputFormat; label: string; hint: string }[] = [
   { format: "pdf", label: "PDF", hint: "The CV as designed by the theme" },
   { format: "docx", label: "Word (.docx)", hint: "One column, editable in Word" },
+  { format: "html", label: "Web page (.html)", hint: "One file to open, share or put online" },
   { format: "md", label: "Markdown (.md)", hint: "For a README, a website or a git repository" },
   { format: "txt", label: "Plain text (.txt)", hint: "For pasting into application forms" },
 ];

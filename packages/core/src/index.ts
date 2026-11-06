@@ -13,6 +13,7 @@ export * from "./model/lint.ts";
 export * from "./model/theme.ts";
 export * from "./parse/index.ts";
 export { type DocxOptions, type DocxResult, renderDocx } from "./render/docx/render.ts";
+export { type HtmlOptions, type HtmlResult, renderHtml } from "./render/html/render.ts";
 export {
   DEFAULT_DOCUMENT_DATE,
   type PdfOptions,

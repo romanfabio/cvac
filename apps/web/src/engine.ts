@@ -1,5 +1,6 @@
 import {
   buildDocx,
+  buildHtml,
   buildMarkdown,
   buildPdf,
   buildText,
@@ -20,7 +21,7 @@ import { CV_FILE, THEME_FILE } from "./files.ts";
 export { CV_FILE, THEME_FILE };
 
 /** Output formats, as `cvac build --format` names them. */
-export type OutputFormat = "pdf" | "docx" | "md" | "txt";
+export type OutputFormat = "pdf" | "docx" | "html" | "md" | "txt";
 
 export interface BuildRequest {
   /** Increasing id: the UI ignores results of superseded requests. */
@@ -113,7 +114,10 @@ export async function runBuild(
       bytes = r.docx;
     } else {
       // UTF-8 without a BOM, exactly the bytes `cvac build` writes.
-      const r = (req.format === "md" ? buildMarkdown : buildText)(content, opts);
+      const r =
+        req.format === "html"
+          ? buildHtml(content, opts)
+          : (req.format === "md" ? buildMarkdown : buildText)(content, opts);
       diagnostics.push(...r.diagnostics);
       if (r.text !== undefined) bytes = new TextEncoder().encode(r.text);
     }

@@ -2,6 +2,7 @@ import { mkdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import {
   buildDocx,
+  buildHtml,
   buildMarkdown,
   buildPdf,
   buildText,
@@ -14,7 +15,7 @@ import { loadBundledFonts } from "@cvac/fonts";
 import { displayName, type Inputs, loadInputs, locate } from "../inputs.ts";
 import { dedupe, formatBytes, type Io, printDiagnostics, summarize } from "../report.ts";
 
-export const FORMATS = ["pdf", "docx", "md", "txt"] as const;
+export const FORMATS = ["pdf", "docx", "html", "md", "txt"] as const;
 export type Format = (typeof FORMATS)[number];
 
 export interface BuildFlags {
@@ -201,7 +202,9 @@ export async function build(cv: string | undefined, flags: BuildFlags): Promise<
         ? await buildPdf(inputs.content, opts)
         : t.format === "docx"
           ? await buildDocx(inputs.content, { ...opts, embedFonts: flags.embedFonts ?? true })
-          : (t.format === "md" ? buildMarkdown : buildText)(inputs.content, opts);
+          : t.format === "html"
+            ? buildHtml(inputs.content, opts)
+            : (t.format === "md" ? buildMarkdown : buildText)(inputs.content, opts);
     outcome.diagnostics.push(...r.diagnostics);
     const bytes =
       "pdf" in r

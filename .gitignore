@@ -14,6 +14,7 @@ blob-report/
 fixtures/**/*.pdf
 fixtures/**/*.docx
 fixtures/*/cv*.md
+fixtures/*/cv*.html
 fixtures/*/cv*.txt
 
 # Logs and local environment

@@ -81,6 +81,36 @@ test("downloads Markdown and plain text with the same bytes as the CLI", async (
   expect(sha256(readFileSync(await pdf.path()))).toBe(expected.pdf);
 });
 
+test("downloads a self-contained web page whose embedded fonts load", async ({ page, context }) => {
+  await open(page);
+  const download = await downloadAs(page, "html");
+  expect(download.suggestedFilename()).toBe("cv.html");
+  const bytes = readFileSync(await download.path());
+  expect(sha256(bytes)).toBe(expected.html);
+
+  // Open the file on its own, with every network request blocked.
+  const tab = await context.newPage();
+  const requests: string[] = [];
+  tab.on("request", (r) => {
+    if (!r.url().startsWith("data:")) requests.push(r.url());
+  });
+  await tab.setContent(bytes.toString("utf8"));
+  const faces = await tab.evaluate(async () => {
+    await document.fonts.ready;
+    return [...document.fonts].map((f) => `${f.family} ${f.weight} ${f.style} ${f.status}`);
+  });
+  expect(faces.length).toBeGreaterThan(1);
+  for (const f of faces) expect(f).toMatch(/ loaded$/);
+  expect(
+    await tab.evaluate(
+      () => getComputedStyle(document.querySelector("h1 span") as Element).fontFamily,
+    ),
+  ).toMatch(/^"cvac /);
+  expect(await tab.locator("h1").textContent()).toBe("Your Name");
+  expect(requests).toEqual([]);
+  await tab.close();
+});
+
 test("the download menu works from the keyboard", async ({ page }) => {
   await open(page);
   const toggle = page.getByRole("button", { name: "More download formats" });

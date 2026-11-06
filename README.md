@@ -3,7 +3,7 @@
 [![CI](https://github.com/romanfabio/cvac/actions/workflows/ci.yml/badge.svg)](https://github.com/romanfabio/cvac/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** output, plus **Markdown** and **plain text** versions of the same CV.
+Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** output, plus a self-contained **web page** and **Markdown** and **plain text** versions of the same CV.
 
 **[Try the web editor](https://romanfabio.github.io/cvac/)**: it runs entirely in your browser, and nothing is uploaded.
 
@@ -63,7 +63,7 @@ mkdir ~/my-cv && cd ~/my-cv
 cvac init                                # starter cv.yaml, theme.yaml and editor schemas
 cvac build                               # -> cv.pdf
 cvac build --format pdf,docx --lang en,it  # -> cv.en.pdf, cv.en.docx, cv.it.pdf, cv.it.docx
-cvac build --format md,txt               # -> cv.md, cv.txt
+cvac build --format html,md,txt          # -> cv.html, cv.md, cv.txt
 cvac watch                               # rebuild on every save
 ```
 
@@ -313,11 +313,18 @@ A test checks that every piece of text can be read back from both formats, in or
 
 The same files give the same SHA-256 in Node and in the browser. The test suite compares output against the hashes in [`fixtures/golden-pdf.json`](fixtures/golden-pdf.json) and [`fixtures/golden-docx.json`](fixtures/golden-docx.json), and the [CI workflow](.github/workflows/ci.yml) runs them on Linux, Windows and macOS.
 
+**HTML** (`.html`): one self-contained page to open in a browser, attach or put online.
+- **Self-contained:** the styles, the fonts and the photo are inside the file. It has no scripts and loads nothing from the network.
+- **Follows the theme:** colors, sizes, header alignment, heading rules and bars, and the sidebar columns, at the PDF's page width. The text reads in the PDF's order (header, main column, sidebar), with headings as `h1`–`h3` and highlights as lists.
+- **Fonts:** each face the CV uses is embedded as a subset holding only the characters the CV contains, typically 3–15 KB each. As the font license requires for a modified font, the subsets carry their own family name (`cvac Sans 3`, `cvac Serif 4`) and keep the original copyright and license notice.
+- **Phones and printing:** below 720 pixels the columns stack (main column, then sidebar). Printing uses the theme's page size and margins.
+- Only `http`, `https`, `mailto` and `tel` addresses become links.
+
 **Markdown and plain text:**
 - **Same text, same order:** like the DOCX, they have one column in CV order, with the same labels, dates and heading case as the other formats (a theme with capitalized headings gives capitalized headings here too). The photo is left out.
 - **Markdown** (`.md`): the name is a `#` title, sections are `##` headings and entries `###` headings, with highlights as a list and links kept. Characters that Markdown would read as formatting are escaped. Use it for a README, a personal site or a git repository.
 - **Plain text** (`.txt`): headings are underlined with `-` and highlights start with `- `. A link appears as its address when the text does not already show it. Use it for application forms that only take pasted text.
-- Both are UTF-8 with `\n` line endings, with no line wrapping. Their expected output is kept as readable files in [`fixtures/golden-text/`](fixtures/golden-text).
+- Both are UTF-8 with `\n` line endings, with no line wrapping. Their expected output, and the HTML's (with each embedded file shown as its SHA-256), is kept as readable files in [`fixtures/golden-text/`](fixtures/golden-text).
 
 ## CLI reference
 
@@ -335,7 +342,7 @@ The same files give the same SHA-256 in Node and in the browser. The test suite 
 
 | Option | Meaning |
 | --- | --- |
-| `-f, --format <formats>` | `pdf` (default), `docx`, `md`, `txt`, a comma-separated list such as `pdf,docx`, or `all` |
+| `-f, --format <formats>` | `pdf` (default), `docx`, `html`, `md`, `txt`, a comma-separated list such as `pdf,docx`, or `all` |
 | `-l, --lang <locales>` | Language or languages, e.g. `it` or `en,it` (default: `meta.defaultLocale`) |
 | `-v, --variant <names>` | Variants or tags, e.g. `backend,lead`, or `all` |
 | `-t, --theme <file>` | Theme file (default: `theme.yaml` next to the CV, if there is one) |
@@ -363,7 +370,7 @@ The editor rebuilds your CV in a Web Worker as you type, with the same core code
 The built page carries a Content-Security-Policy that lets it fetch only its own files, so the browser itself blocks any attempt to send data elsewhere. Static hosts such as GitHub Pages cannot set headers, so the policy is a `<meta>` tag, which does not reach the build worker; a host that can set headers should send the same policy (in [`apps/web/vite.config.ts`](apps/web/vite.config.ts)) for every file.
 
 - `cv.yaml` and `theme.yaml` each have a tab, with schema-based completion. cvac's diagnostics appear inline and in a problems list; clicking one jumps to the line.
-- The toolbar picks the built-in theme (it rewrites `extends:` in `theme.yaml`, so your other settings stay), the language and the variant. **Download PDF** saves the PDF; the arrow next to it opens a menu with every format: PDF, Word (.docx), Markdown (.md) and plain text (.txt).
+- The toolbar picks the built-in theme (it rewrites `extends:` in `theme.yaml`, so your other settings stay), the language and the variant. **Download PDF** saves the PDF; the arrow next to it opens a menu with every format: PDF, Word (.docx), web page (.html), Markdown (.md) and plain text (.txt).
 - **Add photo** takes a JPEG or PNG from your computer. If the CV has no `basics.photo` yet, it adds `photo: photo.jpg` (or `photo.png`) to `cv.yaml` for you, so Export and the CLI find the same file. **Change photo** replaces the image, and **Remove photo** takes the line out of `cv.yaml` and deletes the image from the browser.
 - The status bar shows the page count, build time and the PDF's SHA-256. It matches `cvac build` for the same files.
 - The **Project** menu holds Export, Import and Reset (which starts over from the starter CV, after asking).
@@ -387,13 +394,14 @@ The built page carries a Content-Security-Policy that lets it fetch only its own
 cv.yaml ─parse─► content ─variant─► locale ─┐
                                             ├─► layout (semantic order) ─┬─► PDF  (typesetting + pdfkit)
 theme.yaml ─parse─► theme ─extends/merge────┘                            ├─► DOCX (native Word, one column)
+                                                                         ├─► HTML (self-contained page, subset fonts)
                                                                          └─► Markdown, plain text (one column)
                             lint ◄── content, theme, page count
 ```
 
 | Package | Contents |
 | --- | --- |
-| [`@cvac/core`](packages/core) | Model, YAML parsing with located diagnostics, JSON Schemas, variants, languages, themes, layout, the PDF, DOCX, Markdown and text renderers, and the linter. It runs unchanged in Node and in browsers, and reads no files |
+| [`@cvac/core`](packages/core) | Model, YAML parsing with located diagnostics, JSON Schemas, variants, languages, themes, layout, the PDF, DOCX, HTML, Markdown and text renderers, and the linter. It runs unchanged in Node and in browsers, and reads no files |
 | [`@cvac/fonts`](packages/fonts) | The bundled fonts (Source Sans 3, Source Serif 4) and a Node loader |
 | [`@cvac/cli`](packages/cli) | The `cvac` command line |
 | [`apps/web`](apps/web) | The web editor (Vite, React, CodeMirror, pdf.js) |
@@ -435,7 +443,7 @@ Issues and pull requests are welcome. Before opening a pull request:
 
 cvac is released under the [MIT License](LICENSE). Copyright (c) 2026 Fabio Roman.
 
-**Bundled fonts.** [`packages/fonts`](packages/fonts) contains Source Sans 3 and Source Serif 4 by Adobe, unmodified, under the SIL Open Font License 1.1. Each font folder keeps its copyright notice and license: [source-sans-3/OFL.txt](packages/fonts/files/source-sans-3/OFL.txt), [source-serif-4/OFL.txt](packages/fonts/files/source-serif-4/OFL.txt). The OFL allows embedding the fonts in documents, so the PDFs and DOCX files cvac creates are yours to use and share.
+**Bundled fonts.** [`packages/fonts`](packages/fonts) contains Source Sans 3 and Source Serif 4 by Adobe, unmodified, under the SIL Open Font License 1.1. Each font folder keeps its copyright notice and license: [source-sans-3/OFL.txt](packages/fonts/files/source-sans-3/OFL.txt), [source-serif-4/OFL.txt](packages/fonts/files/source-serif-4/OFL.txt). The OFL allows embedding the fonts in documents, so the PDFs, DOCX files and HTML pages cvac creates are yours to use and share. HTML pages embed subsets of the fonts; since the OFL reserves the name "Source" for the original fonts, the subsets are named `cvac Sans 3` and `cvac Serif 4`, and they keep Adobe's copyright and license notice.
 
 **Dependencies** are installed from npm and are not part of this repository; the hosted web editor, which bundles some of them, lists their notices in its `licenses.txt`. All of them use permissive licenses: mostly MIT, plus ISC, BSD, 0BSD and Apache-2.0 (pdf.js, Playwright, TypeScript). The only exception is lightningcss (MPL-2.0), which Vite uses at build time; it is not modified and not shipped in any output.
 

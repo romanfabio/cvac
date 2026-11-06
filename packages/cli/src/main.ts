@@ -30,7 +30,11 @@ export function createProgram(
   const buildOptions = (cmd: Command) =>
     cmd
       .argument("[cv]", "CV file", "cv.yaml")
-      .option("-f, --format <formats>", "pdf, docx, md, txt, a comma-separated list, or all", "pdf")
+      .option(
+        "-f, --format <formats>",
+        "pdf, docx, html, md, txt, a comma-separated list, or all",
+        "pdf",
+      )
       .option("-l, --lang <locales>", "language(s), e.g. it or en,it (default: meta.defaultLocale)")
       .option("-t, --theme <file>", "theme file (default: theme.yaml next to the CV, if any)")
       .option("-o, --out <path>", "output file, or directory when building several outputs")

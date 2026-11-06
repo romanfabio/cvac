@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   buildDocx,
+  buildHtml,
   buildMarkdown,
   buildPdf,
   buildText,
@@ -41,6 +42,8 @@ describe("web build engine", () => {
     const utf8 = (s: string | undefined) => new TextEncoder().encode(s ?? "");
     const md = await runBuild(req({ format: "md", locale: "it" }), fonts);
     expect(md.bytes).toEqual(utf8(buildMarkdown(cv, { theme, locale: "it" }).text));
+    const html = await runBuild(req({ format: "html" }), fonts);
+    expect(html.bytes).toEqual(utf8(buildHtml(cv, { fonts, theme }).text));
     const txt = await runBuild(req({ format: "txt" }), fonts);
     expect(txt.bytes).toEqual(utf8(buildText(cv, { theme }).text));
   });

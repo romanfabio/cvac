@@ -473,6 +473,7 @@ function Problems({ diags, onPick }: { diags: Diagnostic[]; onPick(d: Diagnostic
 const MIME: Record<OutputFormat, string> = {
   pdf: "application/pdf",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  html: "text/html;charset=utf-8",
   md: "text/markdown;charset=utf-8",
   txt: "text/plain;charset=utf-8",
 };

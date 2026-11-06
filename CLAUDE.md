@@ -4,15 +4,15 @@ Guidance for working in this repository. [README.md](README.md) describes what c
 
 ## What this is
 
-CV as Code: a CV written in YAML (`cv.yaml` for content, `theme.yaml` for looks) is built into **byte-deterministic, ATS-friendly PDF and DOCX**, plus Markdown and plain text. It is a TypeScript monorepo on npm workspaces, running on Node 24+ (ESM only):
+CV as Code: a CV written in YAML (`cv.yaml` for content, `theme.yaml` for looks) is built into **byte-deterministic, ATS-friendly PDF and DOCX**, plus a self-contained HTML page, Markdown and plain text. It is a TypeScript monorepo on npm workspaces, running on Node 24+ (ESM only):
 
 | Path | Package | Role |
 | --- | --- | --- |
-| `packages/core` | `@cvac/core` | Model, parsing, variants, i18n, themes, layout, PDF/DOCX/Markdown/text renderers, linter. **Isomorphic**: runs in Node and browsers, reads no files |
+| `packages/core` | `@cvac/core` | Model, parsing, variants, i18n, themes, layout, PDF/DOCX/HTML/Markdown/text renderers, linter. **Isomorphic**: runs in Node and browsers, reads no files |
 | `packages/fonts` | `@cvac/fonts` | Bundled Source Sans 3 and Source Serif 4 (OFL) plus a Node loader; `@cvac/fonts/faces` is browser-safe |
 | `packages/cli` | `@cvac/cli` | The `cvac` command (commander) |
 | `apps/web` | `@cvac/web` | Browser editor: Vite + React + CodeMirror 6 + pdf.js, builds run in a Web Worker |
-| `fixtures/` | | Sample CVs for tests, golden hashes (`golden-pdf.json`, `golden-docx.json`) and golden Markdown/text files (`golden-text/`) |
+| `fixtures/` | | Sample CVs for tests, golden hashes (`golden-pdf.json`, `golden-docx.json`) and golden HTML/Markdown/text files (`golden-text/`) |
 
 ## Commands
 
@@ -38,7 +38,7 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `npm ci`, `lint
 - **What they run against:** `vite preview` of `apps/web/dist` on port 4174, on a desktop and a phone viewport.
 - **Browser:** the installed Google Chrome (`channel: "chrome"`), so no Playwright browser download is needed.
 - **What they check:**
-  - `editor.spec.ts`: the PDF hash (the status bar's `data-sha256`) and every download's hash (DOCX, Markdown, text, through the download menu) equal the CLI's, the download menu works from the keyboard, also for a serif theme and after the theme picker; errors show while editing; edits persist across a reload; fonts load per family; the phone layout has no horizontal scroll
+  - `editor.spec.ts`: the PDF hash (the status bar's `data-sha256`) and every download's hash (DOCX, HTML, Markdown, text, through the download menu) equal the CLI's, the downloaded HTML loads all its embedded fonts with no network request, the download menu works from the keyboard, also for a serif theme and after the theme picker; errors show while editing; edits persist across a reload; fonts load per family; the phone layout has no horizontal scroll
   - `photo.spec.ts`: Add photo writes `basics.photo` into the starter CV and matches the CLI, Remove photo takes it out and deletes the image; photos persist in IndexedDB (including over 4 MB), old `localStorage` photos are migrated, a failed save is reported
   - `project.spec.ts`: the Project menu (Import opens the file picker, Reset asks and restores the starter), import of a zipped folder, and `cvac build` on an unzipped export gives the editor's bytes
   - `csp.spec.ts`: cross-site requests are blocked and normal use causes no CSP violations
@@ -53,6 +53,7 @@ parse (parse/)  ->  resolveVariant (resolve/variant.ts)  ->  resolveLocale (reso
                 ->  resolveTheme (theme/resolve.ts)       ->  buildLayout (layout/build.ts) -> Layout IR (layout/ir.ts)
                 ->  PDF: typeset (render/pdf/typeset.ts) + pdfkit (render/pdf/render.ts)
                 ->  DOCX: render/docx/render.ts + normalize.ts (always linear, one column)
+                ->  HTML: render/html/render.ts + subset.ts (theme layout, subset fonts embedded)
                 ->  Markdown, text: render/text/render.ts (linear, like the DOCX)
 lint (lint/rules.ts) runs on the variant-resolved content, the theme and the PDF page count.
 ```
@@ -63,7 +64,7 @@ Each core module and what it holds:
 | --- | --- |
 | `model/` | zod schemas: `content.ts`, `theme.ts`, `common.ts` (LocalizedText, dates), `lint.ts` (rule ids). The JSON Schemas are generated from these (`schema.ts`, written to `packages/core/schemas/` by the build) |
 | `parse/` | YAML with source spans (`yaml.ts`, `SourceDoc`); semantic checks and `locateDiagnostics` (`index.ts`) |
-| `build.ts` | Public entry points `layout()`, `buildPdf()`, `buildDocx()`, `buildMarkdown()`, `buildText()` |
+| `build.ts` | Public entry points `layout()`, `buildPdf()`, `buildDocx()`, `buildHtml()`, `buildMarkdown()`, `buildText()` |
 | `editor.ts` | Light entry `@cvac/core/editor`: templates, schemas and types, no renderers (for UI main threads) |
 | `templates.ts` | `STARTER_CV` / `STARTER_THEME`, used by `cvac init` and the web editor. They must pass `validate` and `lint` with zero findings in `en` and `it` (tested) |
 
@@ -93,6 +94,7 @@ The web app (`apps/web/src`):
 - **pdfkit:** always use `loadPdfKit()` from `render/pdf/pdfkit.ts`, never `import PDFDocument from "pdfkit"` elsewhere. pdfkit's Node build compresses with Node's zlib (machine- and version-dependent); core loads the fflate browser build in Node too. A test asserts this.
 - **DOCX:** the `docx` library emits random relationship ids, current timestamps and process-global counters. `normalize.ts` fixes ids, `core.xml` dates and zip mtimes; the photo uses a fixed drawing id. Anything new that the docx library numbers (images, bookmarks, comments) needs the same treatment.
 - **Markdown and text** are strings built from the linear layout, written as UTF-8 without a BOM, `\n` only, one trailing newline, no wrapping. Their goldens are the files in `fixtures/golden-text/` (`text.test.ts`), so a change shows as a readable diff. Escaping (`mdEscape`, `mdLineStart`) must keep every run recoverable: `text.test.ts` strips the Markdown and checks every run in order.
+- **HTML** is a string from the (non-linear) layout: classes are numbered in order of first use, fonts in order of first use, so the output is stable. `render/html/subset.ts` subsets each used face with fontkit and adds the tables browsers need (`cmap`, `OS/2`, `post` v3, `name`); keep its output deterministic (sorted characters, sorted tables). Goldens are in `fixtures/golden-text/*.html` with each `data:` payload replaced by its SHA-256 (`html.test.ts`).
 - **Golden hashes** catch any output change. Only run `UPDATE_GOLDEN=1` for an intended change, then check `git diff fixtures/golden-*.json`: exactly the cases you expected should change, and say which ones in the commit message. Refactors must leave every hash unchanged.
 - **Cross-runtime:** the web editor's status-bar SHA-256 must equal the CLI's for the same files.
 
@@ -136,7 +138,7 @@ The web app (`apps/web/src`):
   2. Resolve it in `theme/resolve.ts`.
   3. Use it in layout and typesetting.
   4. If it can hurt readability, add a lint rule that only flags user-set values.
-  5. If the IR gains a field (as `align` and `bar` did), map it in the PDF typesetter and `render/docx/render.ts`. The Markdown and text renderers (`render/text/render.ts`) only need it if it carries text.
+  5. If the IR gains a field (as `align` and `bar` did), map it in the PDF typesetter, `render/docx/render.ts` and `render/html/render.ts` (as CSS). The Markdown and text renderers (`render/text/render.ts`) only need it if it carries text.
 - **New built-in theme:**
   1. Add its name to `BUILTIN_THEME_NAMES` (`model/theme.ts`) and its object to `BUILTIN_THEMES` (`theme/resolve.ts`). Built-ins extend `default` and only set what differs. Objects merge, so a built-in cannot remove a base value (for example a sidebar tint): extend `default` instead.
   2. Add golden cases (`fixture+theme` in `pdf.test.ts` and `docx.test.ts`) and a round-trip case.
@@ -181,7 +183,7 @@ The web app (`apps/web/src`):
 
 - The repository is public at https://github.com/romanfabio/cvac, under the MIT license (`LICENSE`).
 - Commits use the author's GitHub noreply address, set in this clone's git config (`user.email`). Never commit with another address.
-- Bundled assets: the fonts are Adobe's, unmodified, under the OFL, with `OFL.txt` next to them (keep it there). The fixture photos were drawn by a script for this project; fixture people and companies are made up. Any new asset needs a clear license or must be generated, and the README's License section must list it.
+- Bundled assets: the fonts are Adobe's, unmodified, under the OFL, with `OFL.txt` next to them (keep it there). The HTML output embeds subsets, which the OFL treats as modified fonts: they must not use the Reserved Font Name "Source", so `subset.ts` renames them (`cvac Sans 3`) and keeps the copyright and license records. Don't change that. The fixture photos were drawn by a script for this project; fixture people and companies are made up. Any new asset needs a clear license or must be generated, and the README's License section must list it.
 - Never commit personal data, local paths or secrets.
 
 ## Roadmap
