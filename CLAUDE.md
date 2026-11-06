@@ -36,10 +36,11 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `npm ci`, `lint
 - **What they run against:** `vite preview` of `apps/web/dist` on port 4174, on a desktop and a phone viewport.
 - **Browser:** the installed Google Chrome (`channel: "chrome"`), so no Playwright browser download is needed.
 - **What they check:**
-  - the starter CV's PDF hash (the status bar's `data-sha256`) and DOCX download hash equal the CLI's
-  - errors show while editing
-  - edits persist across a reload
-  - the phone layout has no horizontal scroll
+  - `editor.spec.ts`: the PDF hash (the status bar's `data-sha256`) and DOCX download hash equal the CLI's, also for a serif theme and after the theme picker; errors show while editing; edits persist across a reload; fonts load per family; the phone layout has no horizontal scroll
+  - `photo.spec.ts`: photos persist in IndexedDB (including over 4 MB), old `localStorage` photos are migrated, a failed save is reported
+  - `project.spec.ts`: import of a zipped folder, and `cvac build` on an unzipped export gives the editor's bytes
+  - `csp.spec.ts`: cross-site requests are blocked and normal use causes no CSP violations
+- **Helpers** (`e2e/helpers.ts`): `cliHashes()` builds the starter CV with the real CLI (optionally edited, with extra files), `cliBuild(dir)` builds a folder.
 
 ## Pipeline and where code lives
 
@@ -61,7 +62,20 @@ Each core module and what it holds:
 | `editor.ts` | Light entry `@cvac/core/editor`: templates, schemas and types, no renderers (for UI main threads) |
 | `templates.ts` | `STARTER_CV` / `STARTER_THEME`, used by `cvac init` and the web editor. They must pass `validate` and `lint` with zero findings in `en` and `it` (tested) |
 
-The CLI (`packages/cli/src`) reads files (`inputs.ts`: the CV, the theme chain including file `extends`, the photo) and calls core. The web app (`apps/web/src`) keeps all core calls in `engine.ts` (pure, also tested in Node) and `worker.ts`.
+The CLI (`packages/cli/src`) reads files (`inputs.ts`: the CV, the theme chain including file `extends`, the photo) and calls core.
+
+The web app (`apps/web/src`):
+
+| File | Role |
+| --- | --- |
+| `App.tsx` | Toolbar, panes, status bar; owns the build worker |
+| `engine.ts`, `worker.ts` | All core calls (parse, build, lint), in the worker. `engine.ts` is pure and tested in Node; the worker fetches font families on demand |
+| `Editor.tsx`, `complete.ts` | CodeMirror 6 with cvac's diagnostics and schema-driven YAML completion |
+| `Preview.tsx` | pdf.js rendering of the PDF |
+| `themeFile.ts` | Reads and rewrites `extends:` for the theme picker |
+| `project.ts` | Project `.zip` export and import |
+| `photoStore.ts`, `storage.ts` | Photos in IndexedDB; the YAML and settings in `localStorage` |
+| `zodConfig.ts` | zod `jitless` for the CSP; must stay the first import of `main.tsx` |
 
 ## Invariants: do not break these
 
@@ -146,8 +160,17 @@ The CLI (`packages/cli/src`) reads files (`inputs.ts`: the CV, the theme chain i
 - **YAML completion** works by indentation on possibly-invalid text. Test new cases on realistic documents with several list items (`apps/web/test/complete.test.ts`), not one-liners.
 - **Starter templates** contain the `yaml-language-server` modeline pointing at `./.cvac/schemas/`, which `cvac init` and `cvac schema` create.
 
+## Publishing and licensing
+
+- The repository is public at https://github.com/romanfabio/cvac, under the MIT license (`LICENSE`).
+- Commits use the author's GitHub noreply address, set in this clone's git config (`user.email`). Never commit with another address.
+- Bundled assets: the fonts are Adobe's, unmodified, under the OFL, with `OFL.txt` next to them (keep it there). The fixture photos were drawn by a script for this project; fixture people and companies are made up. Any new asset needs a clear license or must be generated, and the README's License section must list it.
+- Never commit personal data, local paths or secrets.
+
 ## Roadmap
 
-- A custom CV language (Bicep-like), with Langium for the parser and language server. It compiles to the same `Content` model; YAML stays supported.
+YAML (`cv.yaml`, `theme.yaml`) is the only input format. A custom CV language was considered and dropped; don't reintroduce it.
+
 - Contact icons, from a permissively licensed icon set.
-- npm publishing and hosting the web editor.
+- npm publishing.
+- Hosting the web editor on a host that can send the CSP as a header (so it also covers the worker).

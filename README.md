@@ -1,5 +1,8 @@
 # CV as Code (cvac)
 
+[![CI](https://github.com/romanfabio/cvac/actions/workflows/ci.yml/badge.svg)](https://github.com/romanfabio/cvac/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** output.
 
 - **Content and theme are separate.** `cv.yaml` holds what you did, and `theme.yaml` holds how it looks.
@@ -24,6 +27,7 @@ Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** o
 - [Editor support](#editor-support)
 - [How it works](#how-it-works)
 - [Development](#development)
+- [Contributing](#contributing)
 - [Roadmap](#roadmap)
 - [License](#license)
 
@@ -32,7 +36,7 @@ Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** o
 Requires Node 24 or later.
 
 ```bash
-git clone <this repository> cvac
+git clone https://github.com/romanfabio/cvac.git
 cd cvac
 npm install
 npm run build
@@ -373,15 +377,32 @@ npm run e2e                # browser tests of the built web editor (needs Google
 ```
 
 - **Golden hashes:** after an intended change to the output, refresh them with `UPDATE_GOLDEN=1 npm test`, and check that only the cases you expected changed.
-- **Fixtures:** [`fixtures/`](fixtures) holds the sample CVs used by the tests: `basic`, `long`, `variants` and `sidebar` (with a generated placeholder photo).
+- **Fixtures:** [`fixtures/`](fixtures) holds the sample CVs used by the tests: `basic`, `long`, `variants` and `sidebar`. The people and companies in them are made up, and the sidebar's placeholder photo (PNG and JPEG) was drawn by a script for this project.
+- **Browser tests** need Google Chrome installed; Playwright uses it instead of downloading a browser.
 - **Sources in development:** packages expose their sources under a `source` export condition, so the CLI, the tests and the web dev server always run the current code rather than a stale build.
+
+## Contributing
+
+Issues and pull requests are welcome. Before opening a pull request:
+
+- Run `npm run lint`, `npm run typecheck`, `npm run build`, `npm test` and `npm run e2e`. CI runs the same on Linux, Windows and macOS.
+- If the output changes on purpose, refresh the golden hashes (`UPDATE_GOLDEN=1 npm test`) and say in the pull request which cases changed and why.
+- New dependencies must use a permissive license (MIT, ISC, BSD, Apache-2.0; OFL for fonts) and be pinned to an exact version.
+
+[CLAUDE.md](CLAUDE.md) describes the architecture, the guarantees the code must keep (determinism, ATS safety), conventions and recipes for common changes. It is written for AI coding assistants and works just as well for people.
 
 ## Roadmap
 
-- A custom, more readable CV language (Bicep-like), with a language server and a VS Code extension. YAML stays supported, on the same model.
 - Contact icons, from a permissively licensed icon set.
-- Publishing the packages to npm and hosting the web editor.
+- Publishing the packages to npm.
+- Hosting the web editor on a static host that can send security headers.
 
 ## License
 
-MIT. The bundled Source Sans 3 and Source Serif 4 fonts are under the SIL Open Font License 1.1 ([source-sans-3/OFL.txt](packages/fonts/files/source-sans-3/OFL.txt), [source-serif-4/OFL.txt](packages/fonts/files/source-serif-4/OFL.txt)).
+cvac is released under the [MIT License](LICENSE). Copyright (c) 2026 Fabio Roman.
+
+**Bundled fonts.** [`packages/fonts`](packages/fonts) contains Source Sans 3 and Source Serif 4 by Adobe, unmodified, under the SIL Open Font License 1.1. Each font folder keeps its copyright notice and license: [source-sans-3/OFL.txt](packages/fonts/files/source-sans-3/OFL.txt), [source-serif-4/OFL.txt](packages/fonts/files/source-serif-4/OFL.txt). The OFL allows embedding the fonts in documents, so the PDFs and DOCX files cvac creates are yours to use and share.
+
+**Dependencies** are installed from npm and are not part of this repository. All of them use permissive licenses: mostly MIT, plus ISC, BSD, 0BSD and Apache-2.0 (pdf.js, Playwright, TypeScript). The only exception is lightningcss (MPL-2.0), which Vite uses at build time; it is not modified and not shipped in any output.
+
+**Your CV.** cvac's license places no conditions on the CVs you write or the documents cvac builds from them.

@@ -3,6 +3,15 @@
   "private": true,
   "description": "CV as Code: write your CV as code, get deterministic, ATS-friendly PDF and DOCX.",
   "license": "MIT",
+  "author": "Fabio Roman",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/romanfabio/cvac.git"
+  },
+  "homepage": "https://github.com/romanfabio/cvac#readme",
+  "bugs": {
+    "url": "https://github.com/romanfabio/cvac/issues"
+  },
   "type": "module",
   "engines": {
     "node": ">=24"

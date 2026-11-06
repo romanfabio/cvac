@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "description": "Fonts bundled with CV as Code (SIL Open Font License) and a Node loader.",
   "license": "MIT AND OFL-1.1",
+  "author": "Fabio Roman",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/romanfabio/cvac.git",
+    "directory": "packages/fonts"
+  },
+  "homepage": "https://github.com/romanfabio/cvac#readme",
+  "bugs": {
+    "url": "https://github.com/romanfabio/cvac/issues"
+  },
   "type": "module",
   "exports": {
     ".": {

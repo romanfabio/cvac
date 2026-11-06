@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "description": "CV as Code core library: model, parsing, layout and renderers.",
   "license": "MIT",
+  "author": "Fabio Roman",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/romanfabio/cvac.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/romanfabio/cvac#readme",
+  "bugs": {
+    "url": "https://github.com/romanfabio/cvac/issues"
+  },
   "type": "module",
   "exports": {
     ".": {

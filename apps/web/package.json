@@ -4,6 +4,16 @@
   "private": true,
   "description": "CV as Code web editor: YAML on the left, live PDF preview on the right. Runs fully in the browser.",
   "license": "MIT",
+  "author": "Fabio Roman",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/romanfabio/cvac.git",
+    "directory": "apps/web"
+  },
+  "homepage": "https://github.com/romanfabio/cvac#readme",
+  "bugs": {
+    "url": "https://github.com/romanfabio/cvac/issues"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

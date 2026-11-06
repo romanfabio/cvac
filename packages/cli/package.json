@@ -3,6 +3,16 @@
   "version": "0.0.0",
   "description": "CV as Code command line: build deterministic, ATS-friendly PDF and DOCX CVs from YAML.",
   "license": "MIT",
+  "author": "Fabio Roman",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/romanfabio/cvac.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/romanfabio/cvac#readme",
+  "bugs": {
+    "url": "https://github.com/romanfabio/cvac/issues"
+  },
   "type": "module",
   "bin": {
     "cvac": "./dist/bin.js"

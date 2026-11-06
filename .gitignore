@@ -1,7 +1,31 @@
+# Dependencies and build output
 node_modules/
 dist/
-coverage/
-*.tsbuildinfo
 out/
+*.tsbuildinfo
+
+# Test output
+coverage/
 test-results/
 playwright-report/
+blob-report/
+
+# CVs built from the fixtures (`npm run cvac -- build fixtures/...` writes next to the CV)
+fixtures/**/*.pdf
+fixtures/**/*.docx
+
+# Logs and local environment
+*.log
+.env
+.env.*
+
+# Editors and operating systems
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Personal Claude Code settings (launch.json and CLAUDE.md are shared)
+.claude/settings.local.json
