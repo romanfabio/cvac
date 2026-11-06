@@ -125,6 +125,12 @@ button {
   cursor: pointer;
 }
 
+button.secondary.attention {
+  border-color: var(--warning);
+  color: var(--warning);
+  font-weight: 600;
+}
+
 button.secondary {
   background: transparent;
   color: var(--text);

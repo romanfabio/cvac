@@ -39,7 +39,7 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `npm ci`, `lint
 - **Browser:** the installed Google Chrome (`channel: "chrome"`), so no Playwright browser download is needed.
 - **What they check:**
   - `editor.spec.ts`: the PDF hash (the status bar's `data-sha256`) and DOCX download hash equal the CLI's, also for a serif theme and after the theme picker; errors show while editing; edits persist across a reload; fonts load per family; the phone layout has no horizontal scroll
-  - `photo.spec.ts`: photos persist in IndexedDB (including over 4 MB), old `localStorage` photos are migrated, a failed save is reported
+  - `photo.spec.ts`: Add photo writes `basics.photo` into the starter CV and matches the CLI, Remove photo takes it out and deletes the image; photos persist in IndexedDB (including over 4 MB), old `localStorage` photos are migrated, a failed save is reported
   - `project.spec.ts`: import of a zipped folder, and `cvac build` on an unzipped export gives the editor's bytes
   - `csp.spec.ts`: cross-site requests are blocked and normal use causes no CSP violations
   - `site.spec.ts`: the footer's `licenses.txt` lists the fonts and the bundled packages; every request stays inside the base path
@@ -77,6 +77,7 @@ The web app (`apps/web/src`):
 | `Editor.tsx`, `complete.ts` | CodeMirror 6 with cvac's diagnostics and schema-driven YAML completion |
 | `Preview.tsx` | pdf.js rendering of the PDF |
 | `themeFile.ts` | Reads and rewrites `extends:` for the theme picker |
+| `cvPhoto.ts` | Reads, adds and removes `basics.photo` in the CV text for the photo buttons (block-style `basics:` only) |
 | `project.ts` | Project `.zip` export and import |
 | `photoStore.ts`, `storage.ts` | Photos in IndexedDB; the YAML and settings in `localStorage` |
 | `zodConfig.ts` | zod `jitless` for the CSP; must stay the first import of `main.tsx` |

@@ -338,7 +338,8 @@ The editor rebuilds your CV in a Web Worker as you type, with the same core code
 The built page carries a Content-Security-Policy that lets it fetch only its own files, so the browser itself blocks any attempt to send data elsewhere. Static hosts such as GitHub Pages cannot set headers, so the policy is a `<meta>` tag, which does not reach the build worker; a host that can set headers should send the same policy (in [`apps/web/vite.config.ts`](apps/web/vite.config.ts)) for every file.
 
 - `cv.yaml` and `theme.yaml` each have a tab, with schema-based completion. cvac's diagnostics appear inline and in a problems list; clicking one jumps to the line.
-- The toolbar picks the built-in theme (it rewrites `extends:` in `theme.yaml`, so your other settings stay), the language and the variant, sets the photo file, and downloads the PDF or DOCX.
+- The toolbar picks the built-in theme (it rewrites `extends:` in `theme.yaml`, so your other settings stay), the language and the variant, and downloads the PDF or DOCX.
+- **Add photo** takes a JPEG or PNG from your computer. If the CV has no `basics.photo` yet, it adds `photo: photo.jpg` (or `photo.png`) to `cv.yaml` for you, so Export and the CLI find the same file. **Change photo** replaces the image, and **Remove photo** takes the line out of `cv.yaml` and deletes the image from the browser.
 - The status bar shows the page count, build time and the PDF's SHA-256. It matches `cvac build` for the same files.
 - **Export** downloads `cv-project.zip`: `cv.yaml`, `theme.yaml`, the photo at the path `basics.photo` gives, and the editor schemas in `.cvac/schemas/`, the same layout `cvac init` creates. `cvac build` works on the unzipped folder. **Import** opens such a zip, or any zipped folder with a `cv.yaml`, and replaces the editor's files and photo after asking. Browsers can clear their storage, so export to keep a copy of your work or to move it to another device.
 

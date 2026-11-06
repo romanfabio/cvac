@@ -26,6 +26,7 @@ basics:
   email: you@example.com
   phone: "+39 000 000 0000"
   location: { city: Milano, country: { en: Italy, it: Italia } }
+  # photo: photo.jpg              # optional: a JPEG or PNG next to this file
   summary:
     en: One or two sentences about what you do and what you are looking for.
     it: Una o due frasi su cosa fai e cosa stai cercando.

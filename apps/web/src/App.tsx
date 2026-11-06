@@ -7,11 +7,12 @@ import {
   themeJsonSchema,
 } from "@cvac/core/editor";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { photoPathFor, readPhoto, removePhoto, setPhoto } from "./cvPhoto.ts";
 import { Editor, type EditorHandle } from "./Editor.tsx";
 import type { BuildRequest, BuildResult } from "./engine.ts";
 import { CV_FILE, THEME_FILE } from "./files.ts";
 import { Preview } from "./Preview.tsx";
-import { loadPhotos, replacePhotos, savePhoto } from "./photoStore.ts";
+import { deletePhoto, loadPhotos, replacePhotos, savePhoto } from "./photoStore.ts";
 import { exportProject, importProject, PROJECT_FILE } from "./project.ts";
 import { load, save } from "./storage.ts";
 import { readExtends, setExtends } from "./themeFile.ts";
@@ -32,6 +33,7 @@ export function App() {
   /** A problem the user should know about (saving the photo, export, import). */
   const [notice, setNotice] = useState("");
   const importInput = useRef<HTMLInputElement>(null);
+  const photoInput = useRef<HTMLInputElement>(null);
   const [result, setResult] = useState<BuildResult>();
   const [pdf, setPdf] = useState<Uint8Array>();
   const [hash, setHash] = useState("");
@@ -121,7 +123,7 @@ export function App() {
   };
 
   const exportZip = () => {
-    const path = result?.photo;
+    const path = photoPath;
     const data = path ? assets?.[path] : undefined;
     const r = exportProject({
       cv: files[CV_FILE] ?? "",
@@ -167,19 +169,55 @@ export function App() {
     }
   };
 
+  /**
+   * Use the chosen image as the CV's photo. Without `basics.photo` in the
+   * CV, add `photo: photo.jpg` (or .png) to it first, so the YAML, Export
+   * and the CLI all see the same photo.
+   */
   const onPhoto = async (file: File | undefined) => {
-    if (!file || !result?.photo) return;
+    if (!file) return;
+    let key = photoPath;
+    if (!key) {
+      key = photoPathFor(file);
+      const next = setPhoto(files[CV_FILE] ?? "", key);
+      if (next === undefined) {
+        setNotice(`Add "photo: ${key}" under basics in cv.yaml, then choose the file again.`);
+        return;
+      }
+      onChange(CV_FILE, next);
+    }
     const bytes = new Uint8Array(await file.arrayBuffer());
-    const key = result.photo;
-    setAssets((a) => ({ ...a, [key]: bytes }));
+    const path = key;
+    setAssets((a) => ({ ...a, [path]: bytes }));
     try {
-      await savePhoto(key, bytes);
+      await savePhoto(path, bytes);
       setNotice("");
     } catch {
       setNotice(
         "This browser could not save the photo: it is used now, but will be gone after a reload.",
       );
     }
+  };
+
+  /** Take the photo out of the CV and delete the image from this browser. */
+  const onRemovePhoto = async () => {
+    const path = photoPath;
+    const next = removePhoto(files[CV_FILE] ?? "");
+    if (!path || next === undefined) {
+      setNotice(`Remove "photo:" from basics in cv.yaml to drop the photo.`);
+      return;
+    }
+    if (!confirm("Remove the photo from your CV? The image is also deleted from this browser.")) {
+      return;
+    }
+    onChange(CV_FILE, next);
+    setAssets(({ [path]: _, ...rest } = {}) => rest);
+    try {
+      await deletePhoto(path);
+    } catch {
+      // Not saved, or storage unavailable: nothing to delete.
+    }
+    setNotice("");
   };
 
   const reset = () => {
@@ -195,6 +233,11 @@ export function App() {
     save(key, value || undefined);
   };
 
+  // The photo the CV asks for, read from the text so the toolbar follows
+  // every keystroke (the last build's view as a fallback, e.g. flow-style
+  // basics).
+  const photoPath = readPhoto(files[CV_FILE] ?? "") ?? result?.photo;
+
   // The picker edits `extends:` in theme.yaml, so the file stays the source of truth.
   const base = readExtends(files[THEME_FILE] ?? "") ?? "default";
   const builtin = (BUILTIN_THEME_NAMES as readonly string[]).includes(base);
@@ -203,7 +246,7 @@ export function App() {
 
   const diags = result?.diagnostics ?? [];
   const errors = diags.filter((d) => d.severity === "error").length;
-  const missingPhoto = result?.photo !== undefined && !assets?.[result.photo];
+  const missingPhoto = photoPath !== undefined && !assets?.[photoPath];
 
   return (
     <div className="app">
@@ -245,23 +288,34 @@ export function App() {
               ))}
             </select>
           </label>
-          {result?.photo !== undefined && (
-            <label className={missingPhoto ? "attention" : undefined}>
-              Photo
-              <input
-                type="file"
-                accept="image/png,image/jpeg"
-                aria-label={`Choose the file for ${result.photo}`}
-                onChange={(e) => onPhoto(e.target.files?.[0])}
-              />
-            </label>
+          <button
+            type="button"
+            className={missingPhoto ? "secondary attention" : "secondary"}
+            onClick={() => photoInput.current?.click()}
+            title={
+              photoPath
+                ? `The image for basics.photo (${photoPath}): JPEG or PNG, read in your browser only`
+                : "Add a JPEG or PNG photo to your CV: it is read in your browser and never uploaded"
+            }
+          >
+            {photoPath ? (missingPhoto ? "Choose photo" : "Change photo") : "Add photo"}
+          </button>
+          <input
+            ref={photoInput}
+            type="file"
+            accept="image/png,image/jpeg"
+            aria-label={photoPath ? `Choose the file for ${photoPath}` : "Add a photo"}
+            hidden
+            onChange={(e) => {
+              void onPhoto(e.target.files?.[0]);
+              e.target.value = ""; // the same file can be chosen again
+            }}
+          />
+          {photoPath && (
+            <button type="button" className="secondary" onClick={onRemovePhoto}>
+              Remove photo
+            </button>
           )}
-          <button type="button" onClick={() => download("pdf")} disabled={!pdf || errors > 0}>
-            Download PDF
-          </button>
-          <button type="button" onClick={() => download("docx")} disabled={errors > 0}>
-            Download DOCX
-          </button>
           <button
             type="button"
             className="secondary"
@@ -291,6 +345,13 @@ export function App() {
           />
           <button type="button" className="secondary" onClick={reset}>
             Reset
+          </button>
+          {/* The results last, at the right end of the toolbar. */}
+          <button type="button" onClick={() => download("pdf")} disabled={!pdf || errors > 0}>
+            Download PDF
+          </button>
+          <button type="button" onClick={() => download("docx")} disabled={errors > 0}>
+            Download DOCX
           </button>
         </div>
       </header>

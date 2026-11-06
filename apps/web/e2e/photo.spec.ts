@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
-import { cliHashes, hash, ROOT } from "./helpers.ts";
+import { cliHashes, hash, open, ROOT } from "./helpers.ts";
 
 const PHOTO = readFileSync(join(ROOT, "fixtures/sidebar/photo.jpg"));
 const withPhoto = (cv: string) =>
@@ -79,4 +79,56 @@ test("says so when the browser cannot save the photo", async ({ page }) => {
   // The photo is still used for this session.
   await expect(hash(page)).toHaveAttribute("data-sha256", expected.pdf);
   await expect(page.getByRole("alert")).toContainText("could not save the photo");
+});
+
+test("Add photo puts the photo into the starter CV, and Remove photo takes it out", async ({
+  page,
+}) => {
+  // What the button writes: the starter's commented hint becomes the key.
+  const added = cliHashes({
+    cv: (t) => t.replace(/^ {2}# photo:.*$/m, "  photo: photo.jpg"),
+    files: { "photo.jpg": PHOTO },
+  });
+  const plain = cliHashes();
+  page.on("dialog", (d) => d.accept());
+  await open(page);
+  await expect(page.getByRole("button", { name: "Remove photo" })).toHaveCount(0);
+
+  await page
+    .getByLabel("Add a photo")
+    .setInputFiles({ name: "Me.JPG", mimeType: "image/jpeg", buffer: PHOTO });
+  await expect(hash(page)).toHaveAttribute("data-sha256", added.pdf);
+  await expect(page.locator(".editor .cm-content")).toContainText("photo: photo.jpg");
+  await expect(page.getByRole("button", { name: "Change photo" })).toBeVisible();
+
+  // Still there after a reload: the CV line and the saved image.
+  await page.reload();
+  await expect(hash(page)).toHaveAttribute("data-sha256", added.pdf);
+
+  await page.getByRole("button", { name: "Remove photo" }).click();
+  await expect(hash(page)).toHaveAttribute("data-sha256", plain.pdf);
+  await expect(page.locator(".editor .cm-content")).not.toContainText("photo: photo.jpg");
+  await expect(page.getByRole("button", { name: "Add photo" })).toBeVisible();
+  // The image is gone from the browser too.
+  const saved = await page.evaluate(
+    () =>
+      new Promise<number>((resolve) => {
+        const req = indexedDB.open("cvac");
+        req.onsuccess = () => {
+          const count = req.result.transaction("photos").objectStore("photos").count();
+          count.onsuccess = () => resolve(count.result);
+        };
+      }),
+  );
+  expect(saved).toBe(0);
+});
+
+test("a PNG gets photo.png", async ({ page }) => {
+  const png = readFileSync(join(ROOT, "fixtures/sidebar/photo.png"));
+  await open(page);
+  await page
+    .getByLabel("Add a photo")
+    .setInputFiles({ name: "me.png", mimeType: "image/png", buffer: png });
+  await expect(page.locator(".editor .cm-content")).toContainText("photo: photo.png");
+  await expect(page.locator(".problems")).not.toContainText("Cannot find the photo");
 });

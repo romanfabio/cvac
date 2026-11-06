@@ -41,6 +41,18 @@ export async function savePhoto(key: string, data: Uint8Array): Promise<void> {
   }
 }
 
+/** Delete one saved photo. Rejects when the browser refuses. */
+export async function deletePhoto(key: string): Promise<void> {
+  const db = await openDb();
+  try {
+    const tx = db.transaction(STORE, "readwrite");
+    tx.objectStore(STORE).delete(key);
+    await done(tx);
+  } finally {
+    db.close();
+  }
+}
+
 /** Replace every saved photo (project import). Rejects when the browser refuses. */
 export async function replacePhotos(photos: Record<string, Uint8Array>): Promise<void> {
   const db = await openDb();
