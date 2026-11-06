@@ -5,6 +5,8 @@
 
 Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** output.
 
+**[Try the web editor](https://romanfabio.github.io/cvac/)**: it runs entirely in your browser, and nothing is uploaded.
+
 - **Content and theme are separate.** `cv.yaml` holds what you did, and `theme.yaml` holds how it looks.
 - **Deterministic.** The same files and the same cvac version produce byte-identical output, in Node and in the browser.
 - **ATS-aware.** Layout is up to you, and a linter (on by default) warns about choices that hurt applicant tracking systems.
@@ -325,6 +327,8 @@ Exit codes are `0` for success, `1` for problems in your files and `2` for wrong
 
 ## Web editor
 
+Use it online at **https://romanfabio.github.io/cvac/**, or run it locally:
+
 ```bash
 npm run web        # http://localhost:5173
 ```
@@ -338,7 +342,9 @@ The built page carries a Content-Security-Policy that lets it fetch only its own
 - The status bar shows the page count, build time and the PDF's SHA-256. It matches `cvac build` for the same files.
 - **Export** downloads `cv-project.zip`: `cv.yaml`, `theme.yaml`, the photo at the path `basics.photo` gives, and the editor schemas in `.cvac/schemas/`, the same layout `cvac init` creates. `cvac build` works on the unzipped folder. **Import** opens such a zip, or any zipped folder with a `cv.yaml`, and replaces the editor's files and photo after asking. Browsers can clear their storage, so export to keep a copy of your work or to move it to another device.
 
-`npm run build` also produces a static site in `apps/web/dist` that any static host can serve. In the web editor, `extends` can only name a built-in theme.
+`npm run build` also produces a static site in `apps/web/dist` that any static host can serve; set `CVAC_BASE` (for example `CVAC_BASE=cvac`) when it is served from a sub-path. The site includes `licenses.txt`, linked from the footer, with the license notices of the fonts and every npm package bundled into it. In the web editor, `extends` can only name a built-in theme.
+
+**Hosting:** [`.github/workflows/pages.yml`](.github/workflows/pages.yml) publishes the editor to GitHub Pages after CI passes on `main`: it builds for the `/<repo>/` sub-path, runs the browser tests against that build, and deploys it. To enable it in a fork, set Settings > Pages > Source to "GitHub Actions".
 
 ## Editor support
 
@@ -395,7 +401,7 @@ Issues and pull requests are welcome. Before opening a pull request:
 
 - Contact icons, from a permissively licensed icon set.
 - Publishing the packages to npm.
-- Hosting the web editor on a static host that can send security headers.
+- Moving the web editor to a host that can send the CSP as a header, so it also covers the build worker (GitHub Pages only allows the `<meta>` tag).
 
 ## License
 
@@ -403,6 +409,6 @@ cvac is released under the [MIT License](LICENSE). Copyright (c) 2026 Fabio Roma
 
 **Bundled fonts.** [`packages/fonts`](packages/fonts) contains Source Sans 3 and Source Serif 4 by Adobe, unmodified, under the SIL Open Font License 1.1. Each font folder keeps its copyright notice and license: [source-sans-3/OFL.txt](packages/fonts/files/source-sans-3/OFL.txt), [source-serif-4/OFL.txt](packages/fonts/files/source-serif-4/OFL.txt). The OFL allows embedding the fonts in documents, so the PDFs and DOCX files cvac creates are yours to use and share.
 
-**Dependencies** are installed from npm and are not part of this repository. All of them use permissive licenses: mostly MIT, plus ISC, BSD, 0BSD and Apache-2.0 (pdf.js, Playwright, TypeScript). The only exception is lightningcss (MPL-2.0), which Vite uses at build time; it is not modified and not shipped in any output.
+**Dependencies** are installed from npm and are not part of this repository; the hosted web editor, which bundles some of them, lists their notices in its `licenses.txt`. All of them use permissive licenses: mostly MIT, plus ISC, BSD, 0BSD and Apache-2.0 (pdf.js, Playwright, TypeScript). The only exception is lightningcss (MPL-2.0), which Vite uses at build time; it is not modified and not shipped in any output.
 
 **Your CV.** cvac's license places no conditions on the CVs you write or the documents cvac builds from them.

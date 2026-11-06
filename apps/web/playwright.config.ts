@@ -1,6 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 4174;
+/** The site's base path, as built (CVAC_BASE, e.g. /cvac/ for GitHub Pages). */
+const trimmed = (process.env.CVAC_BASE ?? "").replace(/^\/+|\/+$/g, "");
+const BASE = trimmed ? `/${trimmed}/` : "/";
 
 /**
  * End-to-end tests of the production build (`vite build` + `vite preview`),
@@ -15,7 +18,8 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "github" : "list",
   use: {
-    baseURL: `http://localhost:${PORT}`,
+    // Tests navigate to "./", which resolves inside the base path.
+    baseURL: `http://localhost:${PORT}${BASE}`,
     channel: "chrome",
     trace: "retain-on-failure",
   },

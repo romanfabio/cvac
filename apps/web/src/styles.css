@@ -288,6 +288,10 @@ button:disabled {
   margin-left: auto;
 }
 
+.status a {
+  color: inherit;
+}
+
 /* Narrow screens: stack the panes and let the page scroll as a whole. */
 @media (max-width: 900px) {
   .app {

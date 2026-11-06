@@ -366,7 +366,12 @@ export function App() {
             {notice}
           </span>
         )}
-        <span className="privacy">Runs entirely in your browser. Nothing is uploaded.</span>
+        <span className="privacy">
+          Runs entirely in your browser. Nothing is uploaded.{" "}
+          <a href={`${import.meta.env.BASE_URL}licenses.txt`} target="_blank" rel="noopener">
+            Licenses
+          </a>
+        </span>
       </footer>
     </div>
   );

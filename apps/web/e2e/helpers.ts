@@ -78,7 +78,7 @@ export function cliBuild(dir: string): { pdf: string; docx: string } {
 
 /** Open the editor and wait for the first clean build. */
 export async function open(page: Page) {
-  await page.goto("/");
+  await page.goto("./");
   await expect(page.locator(".status")).toContainText("Up to date");
   await expect(page.locator(".preview canvas.page").first()).toBeVisible();
 }

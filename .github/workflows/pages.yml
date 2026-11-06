@@ -1,0 +1,68 @@
+name: Pages
+
+# Publishes the web editor to GitHub Pages (https://<owner>.github.io/<repo>/)
+# after CI has passed on main, or on demand. One-time setup in the
+# repository: Settings > Pages > Source: GitHub Actions.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+# Never cancel a deployment halfway; queue the next one instead.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    # Only after a successful CI run for a push to main (not for pull requests).
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # A project site lives under /<repo>/, so the build must know it.
+      CVAC_BASE: ${{ github.event.repository.name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The commit CI tested, not whatever main points to now.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # The browser tests again, against exactly what gets published
+      # (built for the sub-path).
+      - run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-pages
+          path: apps/web/test-results/
+          if-no-files-found: ignore
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: apps/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

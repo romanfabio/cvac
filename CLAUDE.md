@@ -29,7 +29,9 @@ UPDATE_GOLDEN=1 npm test                   # rewrite golden hashes (see Determin
 npm run e2e                                # Playwright tests of the built web editor (after build)
 ```
 
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `npm ci`, `lint`, `typecheck`, `build`, `test` and `e2e` on Linux, Windows and macOS. Run the same before declaring work done.
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `npm ci`, `lint`, `typecheck`, `build`, `test` and `e2e` on Linux, Windows and macOS. Run the same before declaring work done. It skips pushes that only change `.md` files or `LICENSE`, and a newer push cancels an older run.
+
+**GitHub Pages** ([`.github/workflows/pages.yml`](.github/workflows/pages.yml)) runs after a successful CI run on `main`: it builds the web editor with `CVAC_BASE=<repo>` (served at `/<repo>/`), runs the browser tests against that build and deploys it to https://romanfabio.github.io/cvac/. Test a sub-path build locally with `CVAC_BASE=cvac npm run build -w @cvac/web` then `CVAC_BASE=cvac npm run e2e`.
 
 **End-to-end tests** (`apps/web/e2e/`, config in `apps/web/playwright.config.ts`):
 
@@ -40,6 +42,8 @@ CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `npm ci`, `lint
   - `photo.spec.ts`: photos persist in IndexedDB (including over 4 MB), old `localStorage` photos are migrated, a failed save is reported
   - `project.spec.ts`: import of a zipped folder, and `cvac build` on an unzipped export gives the editor's bytes
   - `csp.spec.ts`: cross-site requests are blocked and normal use causes no CSP violations
+  - `site.spec.ts`: the footer's `licenses.txt` lists the fonts and the bundled packages; every request stays inside the base path
+- **Navigation:** tests open `./`, never `/`, so they work under a base path (`baseURL` includes `CVAC_BASE`).
 - **Helpers** (`e2e/helpers.ts`): `cliHashes()` builds the starter CV with the real CLI (optionally edited, with extra files), `cliBuild(dir)` builds a folder.
 
 ## Pipeline and where code lives
@@ -155,6 +159,8 @@ The web app (`apps/web/src`):
 - **CSP and zod:** the built web page has a Content-Security-Policy without `eval` (`apps/web/vite.config.ts`). zod probes `new Function` when a schema is created unless `jitless` is set, which the browser reports as a violation. `apps/web/src/zodConfig.ts` sets it and must stay the first import of `main.tsx`. `e2e/csp.spec.ts` fails on any violation.
 - **Project zips** (`apps/web/src/project.ts`) mirror the `cvac init` layout; `e2e/project.spec.ts` checks that `cvac build` on an unzipped export gives the editor's bytes. Paths from a CV or a zip go through `safePath()`, so nothing is written or read outside the project folder (zip-slip).
 - **Photos in the web editor** live in IndexedDB (`photoStore.ts`), not `localStorage` (about 5 MB, as text). Never re-encode or resize them in the browser: browser encoders differ, and the bytes would no longer match the CLI.
+- **Git Bash path conversion:** on Windows, Git Bash rewrites environment values that start with `/` into Windows paths, so `CVAC_BASE=/cvac/` becomes `/C:/Program Files/Git/cvac/`. Pass `CVAC_BASE=cvac`; the config adds the slashes.
+- **Third-party notices:** `apps/web/vite.config.ts` collects every npm package bundled into the page and the worker and writes `dist/licenses.txt`, linked from the footer. A new bundled dependency is listed automatically, but its license must still be permissive (see Dependencies).
 - **Web worker lifetime:** create workers inside a `useEffect` and terminate them in its cleanup. React StrictMode runs effects twice in dev.
 - **Preview sizing:** don't rely only on `ResizeObserver` or `requestAnimationFrame` for first-paint sizing; measure on mount. Callbacks don't fire in background tabs.
 - **YAML completion** works by indentation on possibly-invalid text. Test new cases on realistic documents with several list items (`apps/web/test/complete.test.ts`), not one-liners.
@@ -173,4 +179,4 @@ YAML (`cv.yaml`, `theme.yaml`) is the only input format. A custom CV language wa
 
 - Contact icons, from a permissively licensed icon set.
 - npm publishing.
-- Hosting the web editor on a host that can send the CSP as a header (so it also covers the worker).
+- Moving the web editor from GitHub Pages to a host that can send the CSP as a header (so it also covers the worker).
