@@ -25,6 +25,10 @@ const CASES: Record<string, string[]> = {
   "sidebar+classic": ["en"],
   "basic+modern": ["en"],
   "sidebar+sidebar-right": ["en"],
+  "basic+minimal": ["en"],
+  "long+academic": ["en"],
+  "basic+executive": ["it"],
+  "sidebar+creative": ["en"],
 };
 
 const fonts = loadBundledFonts();

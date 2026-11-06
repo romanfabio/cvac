@@ -94,7 +94,7 @@ describe("theme inheritance", () => {
       {
         code: "unknown-theme",
         message: expect.stringContaining(
-          "Available: default, compact, classic, modern, sidebar, sidebar-right,",
+          "Available: default, compact, minimal, classic, academic, executive, modern, sidebar, sidebar-right, creative,",
         ),
       },
     ]);
@@ -351,11 +351,22 @@ describe("built-in themes", () => {
     });
   }
 
-  it("only the classic theme uses the serif, and the DOCX embeds only that family", async () => {
+  it("each theme uses the fonts it should, and the DOCX embeds only the serif for classic", async () => {
     const families = (name: string) =>
       new Set(Object.values(resolveTheme({ extends: name }).theme.fonts).map((f) => f.family));
-    expect(families("classic")).toEqual(new Set(["Source Serif 4"]));
-    for (const name of ["default", "compact", "modern", "sidebar", "sidebar-right"]) {
+    for (const name of ["classic", "academic"]) {
+      expect(families(name)).toEqual(new Set(["Source Serif 4"]));
+    }
+    expect(families("executive")).toEqual(new Set(["Source Sans 3", "Source Serif 4"]));
+    for (const name of [
+      "default",
+      "compact",
+      "minimal",
+      "modern",
+      "sidebar",
+      "sidebar-right",
+      "creative",
+    ]) {
       expect(families(name)).toEqual(new Set(["Source Sans 3"]));
     }
     const r = await buildDocx(CV, { fonts, theme: { extends: "classic" } });

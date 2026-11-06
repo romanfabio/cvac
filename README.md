@@ -207,18 +207,22 @@ Warnings for a variant still point at the right line of your file.
 
 ## Themes
 
-Six themes are built in. Use one as is with a one-line `theme.yaml` (`extends: classic`), or build on it:
+Ten themes are built in. Use one as is with a one-line `theme.yaml` (`extends: classic`), or build on it:
 
-| Theme           | Look                                                                                         |
-| --------------- | -------------------------------------------------------------------------------------------- |
-| `default`       | One column, Source Sans 3, headings in blue over a thin rule                                  |
-| `compact`       | Like `default` with smaller type and tighter spacing, to keep a long CV on fewer pages        |
-| `classic`       | Source Serif 4, a centered header, capitalized headings over a rule, near-black                |
-| `modern`        | A large name in teal, capitalized headings marked with a teal bar                             |
-| `sidebar`       | Two columns: summary, skills, languages and certifications in a tinted left column            |
-| `sidebar-right` | The header across the page, then the main column and an untinted sidebar on the right         |
+| Theme | Look |
+| --- | --- |
+| `default` | One column, Source Sans 3, headings in blue over a thin rule |
+| `compact` | Like `default` with smaller type and tighter spacing, to keep a long CV on fewer pages |
+| `minimal` | Black on white, no rules or color, small capitalized headings and generous whitespace |
+| `classic` | Source Serif 4, a centered header, capitalized headings over a rule, near-black |
+| `academic` | All serif and dense, for long CVs with publications, projects and teaching |
+| `executive` | A navy serif name and headings over a sans-serif body, full month names |
+| `modern` | A large name in teal, capitalized headings marked with a teal bar |
+| `sidebar` | Two columns: summary, skills, languages and certifications in a tinted left column |
+| `sidebar-right` | The header across the page, then the main column and an untinted sidebar on the right |
+| `creative` | A warm tinted sidebar on the left, a terracotta name and headings marked with a bar |
 
-The two sidebar themes affect only the PDF: the DOCX is always one column (see [Output](#output)).
+The two-column themes (`sidebar`, `sidebar-right`, `creative`) affect only the PDF: the DOCX is always one column (see [Output](#output)).
 
 A theme lists only what it changes from its base:
 

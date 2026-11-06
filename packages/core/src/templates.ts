@@ -69,8 +69,9 @@ sections:
 
 export const STARTER_THEME = `# yaml-language-server: $schema=./.cvac/schemas/theme.schema.json
 # Layered over a base theme: set only what you want to change.
-# Built-in bases: default, compact, classic, modern (one column),
-# sidebar and sidebar-right (two columns). A file works too: ./base.yaml
+# Built-in bases: default, compact, minimal, classic, academic, executive,
+# modern (one column); sidebar, sidebar-right, creative (two columns in the
+# PDF). A file works too: ./base.yaml
 version: 1
 extends: default
 

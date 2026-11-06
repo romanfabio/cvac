@@ -171,13 +171,106 @@ export const sidebarRightTheme = {
   photo: { position: "header-right" },
 } as const satisfies Theme;
 
+/**
+ * Built-in minimal theme: black on white, no rules or color, small
+ * capitalized headings, a light name and generous whitespace.
+ */
+export const minimalTheme = {
+  name: "minimal",
+  extends: "default",
+  page: { margins: "20mm" },
+  headings: { rule: "none", case: "upper" },
+  tokens: {
+    fonts: {
+      heading: { size: "10pt", weight: "bold" },
+      name: { size: "24pt", weight: "regular" },
+    },
+    colors: { text: "#1a1a1a", muted: "#5c5c5c", accent: "#1a1a1a" },
+    spacing: { section: "16pt", item: "8pt", line: 1.3 },
+  },
+} as const satisfies Theme;
+
+/**
+ * Built-in academic theme: all serif and dense, for long CVs with
+ * publications, projects and teaching. Plain headings over a thin rule.
+ */
+export const academicTheme = {
+  name: "academic",
+  extends: "default",
+  page: { margins: { top: "18mm", right: "20mm", bottom: "18mm", left: "20mm" } },
+  tokens: {
+    fonts: {
+      body: { family: SERIF_FONT_FAMILY, size: "10pt" },
+      heading: { family: SERIF_FONT_FAMILY, size: "11.5pt", weight: "bold" },
+      name: { family: SERIF_FONT_FAMILY, size: "20pt", weight: "bold" },
+    },
+    colors: { text: "#1a1a1a", muted: "#4d4d4d", accent: "#1a1a1a" },
+    spacing: { section: "10pt", item: "5pt", line: 1.2 },
+  },
+} as const satisfies Theme;
+
+/**
+ * Built-in executive theme: a serif name and headings over a sans body,
+ * in navy, with full month names.
+ */
+export const executiveTheme = {
+  name: "executive",
+  extends: "default",
+  header: { nameColor: "accent" },
+  tokens: {
+    fonts: {
+      heading: { family: SERIF_FONT_FAMILY, size: "12.5pt", weight: "bold" },
+      name: { family: SERIF_FONT_FAMILY, size: "26pt", weight: "bold" },
+    },
+    colors: { text: "#1f2328", muted: "#56606b", accent: "#1c3d5a" },
+    spacing: { section: "13pt" },
+  },
+  format: { date: "MMMM YYYY" },
+} as const satisfies Theme;
+
+/**
+ * Built-in creative theme: a warm tinted sidebar on the left, a terracotta
+ * name and capitalized headings with an accent bar. Like every sidebar
+ * layout, the DOCX output stays single-column.
+ */
+export const creativeTheme = {
+  name: "creative",
+  extends: "default",
+  page: { margins: { top: "16mm", right: "14mm", bottom: "16mm", left: "14mm" } },
+  layout: {
+    type: "sidebar",
+    side: "left",
+    width: "32%",
+    gap: "9mm",
+    header: "main",
+    sidebar: ["summary", "skills", "languages", "certifications"],
+  },
+  photo: { position: "sidebar", shape: "rounded" },
+  header: { nameColor: "accent" },
+  headings: { rule: "bar", case: "upper" },
+  tokens: {
+    fonts: { name: { size: "26pt" }, heading: { size: "10.5pt" } },
+    colors: {
+      text: "#2b2622",
+      muted: "#5e554d",
+      accent: "#a0412a",
+      sidebarBackground: "#f7efe6",
+    },
+    spacing: { section: "14pt" },
+  },
+} as const satisfies Theme;
+
 export const BUILTIN_THEMES: Readonly<Record<(typeof BUILTIN_THEME_NAMES)[number], Theme>> = {
   default: defaultTheme,
   compact: compactTheme,
+  minimal: minimalTheme,
   classic: classicTheme,
+  academic: academicTheme,
+  executive: executiveTheme,
   modern: modernTheme,
   sidebar: sidebarTheme,
   "sidebar-right": sidebarRightTheme,
+  creative: creativeTheme,
 };
 
 const PAGE_SIZES = { A4: [595.28, 841.89], Letter: [612, 792] } as const;

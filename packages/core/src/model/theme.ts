@@ -120,12 +120,18 @@ export const Headings = z.strictObject({
 
 /** Names of the built-in themes, usable in `extends`. */
 export const BUILTIN_THEME_NAMES = [
+  // One column.
   "default",
   "compact",
+  "minimal",
   "classic",
+  "academic",
+  "executive",
   "modern",
+  // Two columns in the PDF (the DOCX is always one column).
   "sidebar",
   "sidebar-right",
+  "creative",
 ] as const;
 
 export const Theme = z.strictObject({

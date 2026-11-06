@@ -74,6 +74,7 @@ describe("DOCX determinism (golden hashes)", () => {
     ["multilingual.fr.docx", "multilingual", { locale: "fr" }],
     ["sidebar@classic.en.docx", "sidebar+classic", { locale: "en" }],
     ["basic@modern.en.docx", "basic+modern", { locale: "en" }],
+    ["basic@executive.en.docx", "basic+executive", { locale: "en" }],
   ];
 
   for (const [key, fixture, opts] of cases) {

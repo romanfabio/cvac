@@ -13,17 +13,21 @@
       "type": "string"
     },
     "extends": {
-      "description": "Theme to build on: a built-in (default, compact, classic, modern, sidebar, sidebar-right) or a file like ./base.yaml",
+      "description": "Theme to build on: a built-in (default, compact, minimal, classic, academic, executive, modern, sidebar, sidebar-right, creative) or a file like ./base.yaml",
       "anyOf": [
         {
           "type": "string",
           "enum": [
             "default",
             "compact",
+            "minimal",
             "classic",
+            "academic",
+            "executive",
             "modern",
             "sidebar",
-            "sidebar-right"
+            "sidebar-right",
+            "creative"
           ]
         },
         {

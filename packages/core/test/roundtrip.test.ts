@@ -31,6 +31,10 @@ const CASES: [string, string][] = [
   ["sidebar+classic", "en"],
   ["long+modern", "en"],
   ["sidebar+sidebar-right", "en"],
+  ["basic+minimal", "en"],
+  ["long+academic", "en"],
+  ["basic+executive", "it"],
+  ["sidebar+creative", "en"],
 ];
 const fonts = loadBundledFonts();
 const norm = (s: string) => s.replace(/\s+/g, " ").trim();
