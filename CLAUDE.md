@@ -138,6 +138,12 @@ The web app (`apps/web/src`):
   2. Add golden cases (`fixture+theme` in `pdf.test.ts` and `docx.test.ts`) and a round-trip case.
   3. The `built-in themes` tests in `themes.test.ts` lint every built-in as if all its values were user-set, so it must pass the readability rules.
   4. Update the theme table in the README and the comment in `STARTER_THEME`.
+- **New label language:**
+  1. Add a `Labels` table in `i18n/labels.ts` (sections, the word for "present", short and long months in the language's usual written form) and list it in `TABLES`.
+  2. Add the language's usual section headings to `STANDARD_HEADINGS` in `lint/rules.ts`.
+  3. Extend `fixtures/multilingual/cv.yaml` with the language, and add golden and round-trip cases.
+  4. `resolve.test.ts` checks every table is complete and that both bundled fonts can draw it.
+  5. Update the language table in the README.
 - **New bundled font:**
   1. Add the files under `packages/fonts/files/<family>/` with the OFL text.
   2. List the faces in `faces.ts`.

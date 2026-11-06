@@ -17,9 +17,11 @@ const CASES: Record<string, string[]> = {
   "variants:backend": ["en"],
   "variants:lead": ["it"],
   sidebar: ["en", "it"],
+  multilingual: ["de", "es", "fr", "nl", "pt"],
   // Built-in themes (fixture+theme).
   "long+compact": ["en"],
   "basic+classic": ["it"],
+  "multilingual+classic": ["fr"],
   "sidebar+classic": ["en"],
   "basic+modern": ["en"],
   "sidebar+sidebar-right": ["en"],

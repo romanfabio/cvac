@@ -148,7 +148,21 @@ basics:
   title: { en: Software Engineer, it: Ingegnere del Software }
 ```
 
-`cvac build --lang it` builds the Italian version. Missing translations fall back to the default language, with a warning that points at the field. Section headings, `Present` and month names are translated as well. English and Italian are built in; other languages use the English labels.
+`cvac build --lang it` builds the Italian version. Missing translations fall back to the default language, with a warning that points at the field.
+
+Section headings, the word for "present" and month names come built in for these languages:
+
+| Code | Language | Example dates |
+| --- | --- | --- |
+| `en` | English | Mar 2021 – Present |
+| `it` | Italian | mar 2021 – Presente |
+| `de` | German | März 2021 – heute |
+| `es` | Spanish | mar. 2021 – Actualidad |
+| `fr` | French | mars 2021 – Aujourd'hui |
+| `nl` | Dutch | mrt. 2021 – heden |
+| `pt` | Portuguese | mar. 2021 – Atual |
+
+Regional codes use their language (`de-AT`, `pt-BR`), and any other language gets the English labels; you can still write all your text in it, and override any heading with a section's `title`. [`fixtures/multilingual/cv.yaml`](fixtures/multilingual/cv.yaml) is one CV in six of these languages.
 
 ## Variants
 
@@ -243,7 +257,7 @@ The photo is cover-cropped to the chosen shape in both formats. `photo: { show: 
 
 | Rule | Default | Catches |
 | --- | --- | --- |
-| `nonstandard-heading` | warning | Section titles ATS may not recognize (English and Italian standard headings are accepted) |
+| `nonstandard-heading` | warning | Section titles ATS may not recognize (the usual headings in every built-in language are accepted) |
 | `missing-dates` | warning | Jobs without a start date, education without any date |
 | `date-order` | error | An end date before the start date |
 | `missing-email` | warning | No email address |
@@ -384,7 +398,7 @@ npm run e2e                # browser tests of the built web editor (needs Google
 ```
 
 - **Golden hashes:** after an intended change to the output, refresh them with `UPDATE_GOLDEN=1 npm test`, and check that only the cases you expected changed.
-- **Fixtures:** [`fixtures/`](fixtures) holds the sample CVs used by the tests: `basic`, `long`, `variants` and `sidebar`. The people and companies in them are made up, and the sidebar's placeholder photo (PNG and JPEG) was drawn by a script for this project.
+- **Fixtures:** [`fixtures/`](fixtures) holds the sample CVs used by the tests: `basic`, `long`, `variants`, `sidebar` and `multilingual`. The people and companies in them are made up, and the sidebar's placeholder photo (PNG and JPEG) was drawn by a script for this project.
 - **Browser tests** need Google Chrome installed; Playwright uses it instead of downloading a browser.
 - **Sources in development:** packages expose their sources under a `source` export condition, so the CLI, the tests and the web dev server always run the current code rather than a stale build.
 

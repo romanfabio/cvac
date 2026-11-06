@@ -1,0 +1,102 @@
+# yaml-language-server: $schema=../../packages/core/schemas/cv.schema.json
+# One CV in every built-in language except Italian (covered by basic):
+# labels, month names and accented text in each.
+version: 1
+meta:
+  defaultLocale: en
+  locales: [en, de, es, fr, nl, pt]
+
+basics:
+  name: Lena Martins
+  title:
+    en: Data Engineer
+    de: Dateningenieurin
+    es: Ingeniera de datos
+    fr: Ingénieure données
+    nl: Data-engineer
+    pt: Engenheira de dados
+  email: lena.martins@example.com
+  phone: "+351 210 000 000"
+  location:
+    city:
+      en: Lisbon
+      de: Lissabon
+      es: Lisboa
+      fr: Lisbonne
+      nl: Lissabon
+      pt: Lisboa
+    country: Portugal
+  summary:
+    en: Builds reliable data pipelines and teaches teams to own them.
+    de: Baut zuverlässige Datenpipelines und befähigt Teams, sie selbst zu betreiben.
+    es: Construye flujos de datos fiables y enseña a los equipos a gestionarlos.
+    fr: Conçoit des chaînes de données fiables et apprend aux équipes à les maîtriser.
+    nl: Bouwt betrouwbare datapijplijnen en leert teams ze zelf te beheren.
+    pt: Constrói pipelines de dados fiáveis e ensina as equipas a geri-los.
+
+sections:
+  - type: experience
+    items:
+      - company: Nordwind Analytics
+        role:
+          en: Senior Data Engineer
+          de: Senior-Dateningenieurin
+          es: Ingeniera de datos sénior
+          fr: Ingénieure données senior
+          nl: Senior data-engineer
+          pt: Engenheira de dados sénior
+        start: 2022-03
+        end: present
+        highlights:
+          - en: Cut nightly batch time from 6 hours to 40 minutes
+            de: Nächtliche Batch-Laufzeit von 6 Stunden auf 40 Minuten gesenkt
+            es: Reducción del proceso nocturno de 6 horas a 40 minutos
+            fr: Traitement nocturne réduit de 6 heures à 40 minutes
+            nl: Nachtelijke batchtijd teruggebracht van 6 uur naar 40 minuten
+            pt: Redução do processamento noturno de 6 horas para 40 minutos
+      - company: Café Data Lda.
+        role:
+          en: Data Analyst
+          de: Datenanalystin
+          es: Analista de datos
+          fr: Analyste de données
+          nl: Data-analist
+          pt: Analista de dados
+        start: 2019-09
+        end: 2022-02
+
+  - type: education
+    items:
+      - institution: Universidade de Lisboa
+        degree:
+          en: MSc Computer Science
+          de: M.Sc. Informatik
+          es: Máster en Informática
+          fr: Master en informatique
+          nl: MSc Informatica
+          pt: Mestrado em Engenharia Informática
+        start: 2017
+        end: 2019
+
+  - type: skills
+    items:
+      - { name: Data, keywords: [Spark, Airflow, dbt, PostgreSQL] }
+
+  - type: languages
+    items:
+      - language:
+          en: Portuguese
+          de: Portugiesisch
+          es: Portugués
+          fr: Portugais
+          nl: Portugees
+          pt: Português
+        fluency: C2
+      - language:
+          en: German
+          de: Deutsch
+          es: Alemán
+          fr: Allemand
+          nl: Duits
+          pt: Alemão
+        fluency: B2

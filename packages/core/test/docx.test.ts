@@ -70,6 +70,8 @@ describe("DOCX determinism (golden hashes)", () => {
     ["sidebar.en.docx", "sidebar", { locale: "en" }],
     ["basic.en.no-embed.docx", "basic", { locale: "en", embed: false }],
     ["basic@classic.it.docx", "basic+classic", { locale: "it" }],
+    ["multilingual.de.docx", "multilingual", { locale: "de" }],
+    ["multilingual.fr.docx", "multilingual", { locale: "fr" }],
     ["sidebar@classic.en.docx", "sidebar+classic", { locale: "en" }],
     ["basic@modern.en.docx", "basic+modern", { locale: "en" }],
   ];

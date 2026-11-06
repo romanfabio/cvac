@@ -1,5 +1,6 @@
 import type { Diagnostic, Severity } from "../diagnostics.ts";
 import { type FontSet, selectFace } from "../fonts.ts";
+import { labelsFor } from "../i18n/labels.ts";
 import type { Content } from "../model/content.ts";
 import type { LintRuleId } from "../model/lint.ts";
 import type { Theme } from "../model/theme.ts";
@@ -12,6 +13,8 @@ export interface LintContext {
   content: Content;
   /** Same structure with one language picked. */
   resolved: ResolvedContent;
+  /** The language picked (labels and suggestions follow it). */
+  locale: string;
   /** The user's theme as written (to know what was set explicitly). */
   theme: Theme | undefined;
   resolvedTheme: ResolvedTheme;
@@ -39,8 +42,9 @@ type Path = (string | number)[];
 // ---------------------------------------------------------------------------
 
 /**
- * Headings ATS parsers recognize, per section type (en + it). Matching is
- * case-insensitive and ignores punctuation, so "Work Experience:" is fine.
+ * Headings ATS parsers recognize, per section type, in every built-in
+ * language (en, it, de, es, fr, nl, pt). Matching is case-insensitive and
+ * ignores punctuation, so "Work Experience:" is fine.
  */
 const STANDARD_HEADINGS: Record<string, string[]> = {
   experience: [
@@ -58,6 +62,23 @@ const STANDARD_HEADINGS: Record<string, string[]> = {
     "esperienze professionali",
     "esperienza lavorativa",
     "esperienze lavorative",
+    "berufserfahrung",
+    "berufliche erfahrung",
+    "berufspraxis",
+    "beruflicher werdegang",
+    "experiencia",
+    "experiencia profesional",
+    "experiencia laboral",
+    "expérience",
+    "expériences",
+    "expérience professionnelle",
+    "expériences professionnelles",
+    "parcours professionnel",
+    "werkervaring",
+    "ervaring",
+    "professionele ervaring",
+    "experiência",
+    "experiência profissional",
   ],
   education: [
     "education",
@@ -68,6 +89,27 @@ const STANDARD_HEADINGS: Record<string, string[]> = {
     "formazione",
     "istruzione e formazione",
     "titoli di studio",
+    "ausbildung",
+    "bildung",
+    "bildungsweg",
+    "studium",
+    "ausbildung und studium",
+    "formación",
+    "formación académica",
+    "educación",
+    "estudios",
+    "formation",
+    "formations",
+    "études",
+    "diplômes",
+    "formation et diplômes",
+    "opleiding",
+    "opleidingen",
+    "onderwijs",
+    "formação",
+    "formação académica",
+    "formação acadêmica",
+    "educação",
   ],
   skills: [
     "skills",
@@ -81,6 +123,23 @@ const STANDARD_HEADINGS: Record<string, string[]> = {
     "competenze tecniche",
     "abilità",
     "capacità e competenze",
+    "kenntnisse",
+    "fähigkeiten",
+    "kompetenzen",
+    "fachkenntnisse",
+    "it-kenntnisse",
+    "competencias",
+    "habilidades",
+    "aptitudes",
+    "conocimientos",
+    "compétences",
+    "compétences techniques",
+    "savoir-faire",
+    "vaardigheden",
+    "competenties",
+    "kennis",
+    "competências",
+    "competências técnicas",
   ],
   languages: [
     "languages",
@@ -88,6 +147,14 @@ const STANDARD_HEADINGS: Record<string, string[]> = {
     "lingue",
     "lingue straniere",
     "competenze linguistiche",
+    "sprachen",
+    "sprachkenntnisse",
+    "idiomas",
+    "langues",
+    "compétences linguistiques",
+    "talen",
+    "talenkennis",
+    "línguas",
   ],
   projects: [
     "projects",
@@ -96,6 +163,12 @@ const STANDARD_HEADINGS: Record<string, string[]> = {
     "side projects",
     "progetti",
     "progetti personali",
+    "projekte",
+    "proyectos",
+    "projets",
+    "projecten",
+    "projetos",
+    "projectos",
   ],
   certifications: [
     "certifications",
@@ -105,6 +178,15 @@ const STANDARD_HEADINGS: Record<string, string[]> = {
     "certificazioni",
     "certificati",
     "certificazioni e licenze",
+    "zertifizierungen",
+    "zertifikate",
+    "certificaciones",
+    "certificados",
+    "certifications",
+    "certificats",
+    "certificaten",
+    "certificeringen",
+    "certificações",
   ],
 };
 
@@ -121,15 +203,18 @@ const nonstandardHeading: Rule = {
   level: "warning",
   summary:
     "ATS parsers find sections by their heading; creative titles can make a section invisible.",
-  check({ resolved }) {
+  check({ resolved, locale }) {
     const out: Finding[] = [];
+    const labels = labelsFor(locale);
     resolved.sections.forEach((s, i) => {
       if (s.type === "custom" || s.title === undefined) return;
-      const known = STANDARD_HEADINGS[s.type] ?? [];
+      const known = (STANDARD_HEADINGS[s.type] ?? []).map(normHeading);
       if (known.includes(normHeading(s.title))) return;
+      // Suggest the default heading in the language being checked.
+      const suggestion = labels.sections[s.type as keyof typeof labels.sections] ?? s.type;
       out.push({
         message: `Heading '${s.title}' is not a standard ${s.type} heading`,
-        help: `Use a heading parsers recognize, e.g. '${cap(known[0] ?? s.type)}', or remove 'title' to get the default`,
+        help: `Use a heading parsers recognize, e.g. '${suggestion}', or remove 'title' to get the default`,
         path: ["sections", i, "title"],
         origin: "content",
       });

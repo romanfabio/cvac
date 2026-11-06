@@ -58,7 +58,7 @@ describe("lint rules", () => {
     ).toEqual([]);
   });
 
-  it("nonstandard-heading: flags creative titles, accepts known ones in en and it", () => {
+  it("nonstandard-heading: flags creative titles, accepts known ones", () => {
     const withTitle = (t: string) =>
       cv(CLEAN.replace("  - type: experience\n", `  - type: experience\n    title: "${t}"\n`));
     expect(codes(withTitle("My Journey"))).toEqual(["nonstandard-heading"]);
@@ -69,6 +69,35 @@ describe("lint rules", () => {
       path: ["sections", 0, "title"],
       origin: "content",
       help: expect.stringContaining("'Experience'"),
+    });
+  });
+
+  it("nonstandard-heading: accepts the usual headings of every built-in language", () => {
+    const withTitle = (t: string) =>
+      cv(CLEAN.replace("  - type: experience\n", `  - type: experience\n    title: "${t}"\n`));
+    for (const t of [
+      "Berufserfahrung",
+      "Experiencia laboral",
+      "Expériences professionnelles",
+      "Werkervaring",
+      "Experiência profissional",
+    ]) {
+      expect(codes(withTitle(t)), t).toEqual([]);
+    }
+    // Hyphenated entries match too (punctuation is ignored on both sides).
+    const skills = cv(
+      CLEAN.replace("  - type: skills\n", '  - type: skills\n    title: "IT-Kenntnisse"\n'),
+    );
+    expect(codes(skills)).toEqual([]);
+  });
+
+  it("nonstandard-heading: suggests the default heading in the language being checked", () => {
+    const c = cv(
+      CLEAN.replace("  - type: experience\n", '  - type: experience\n    title: "Mein Weg"\n'),
+    );
+    expect(lint(c, { locale: "de" })[0]).toMatchObject({
+      code: "lint/nonstandard-heading",
+      help: expect.stringContaining("'Berufserfahrung'"),
     });
   });
 

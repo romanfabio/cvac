@@ -44,9 +44,11 @@ export function lint(content: Content, opts: LintOptions = {}): Diagnostic[] {
   const config = content.meta?.lint ?? {};
   const v = resolveVariant(content, opts.variant);
   if (v.diagnostics.length) return v.diagnostics;
+  const loc = resolveLocale(v.content, opts.locale);
   const ctx = {
     content: v.content,
-    resolved: resolveLocale(v.content, opts.locale).content,
+    resolved: loc.content,
+    locale: loc.locale,
     theme: opts.theme,
     resolvedTheme: resolveTheme(opts.theme).theme,
     fonts: opts.fonts,

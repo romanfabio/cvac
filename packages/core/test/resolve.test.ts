@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { loadBundledFonts } from "../../fonts/src/index.ts";
 import {
+  BUILTIN_LOCALES,
   formatRange,
   labelsFor,
   layout,
@@ -10,6 +12,7 @@ import {
   selectFace,
   toPoints,
 } from "../src/index.ts";
+import { missingGlyphs } from "../src/lint/glyphs.ts";
 
 const parse = (src: string) => {
   const r = parseContent(src);
@@ -66,8 +69,53 @@ describe("dates and labels", () => {
   });
 
   it("falls back to English labels for unknown locales", () => {
-    expect(labelsFor("de").sections.experience).toBe("Experience");
+    expect(labelsFor("ja").sections.experience).toBe("Experience");
     expect(labelsFor("it-CH").sections.experience).toBe("Esperienza");
+    expect(labelsFor("de-AT").sections.experience).toBe("Berufserfahrung");
+    expect(labelsFor("pt-BR").sections.education).toBe("Formação");
+  });
+
+  it("has complete tables for every built-in language", () => {
+    expect(BUILTIN_LOCALES).toEqual(["en", "it", "de", "es", "fr", "nl", "pt"]);
+    for (const locale of BUILTIN_LOCALES) {
+      const l = labelsFor(locale);
+      expect(Object.values(l.sections).every(Boolean), locale).toBe(true);
+      expect(l.monthsShort, locale).toHaveLength(12);
+      expect(l.monthsLong, locale).toHaveLength(12);
+      expect(new Set(l.monthsShort).size, locale).toBe(12);
+      expect(l.present && l.cv, locale).toBeTruthy();
+    }
+  });
+
+  it("formats dates in each language", () => {
+    const range = (locale: string, style: "MMM YYYY" | "MMMM YYYY" = "MMM YYYY") =>
+      formatRange("2021-03", "present", style, labelsFor(locale));
+    expect(range("de")).toBe("März 2021 – heute");
+    expect(range("es")).toBe("mar. 2021 – Actualidad");
+    expect(range("fr")).toBe("mars 2021 – Aujourd'hui");
+    expect(range("nl")).toBe("mrt. 2021 – heden");
+    expect(range("pt")).toBe("mar. 2021 – Atual");
+    expect(formatRange("2019-02", "2020-12", "MMMM YYYY", labelsFor("fr"))).toBe(
+      "février 2019 – décembre 2020",
+    );
+  });
+
+  it("every label can be drawn by both bundled fonts", () => {
+    const faces = loadBundledFonts().filter((f) => f.weight === 400 && !f.italic);
+    expect(faces.map((f) => f.family)).toEqual(["Source Sans 3", "Source Serif 4"]);
+    for (const locale of BUILTIN_LOCALES) {
+      const l = labelsFor(locale);
+      const text = [
+        ...Object.values(l.sections),
+        l.present,
+        l.cv,
+        ...l.monthsShort,
+        ...l.monthsLong,
+      ];
+      for (const face of faces) {
+        expect(missingGlyphs(face, text.join(" ")), `${locale} in ${face.family}`).toEqual([]);
+      }
+    }
   });
 });
 
