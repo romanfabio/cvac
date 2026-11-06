@@ -20,6 +20,7 @@ export {
   renderPdf,
 } from "./render/pdf/render.ts";
 export { type DrawItem, type Measurer, type TypesetPage, typeset } from "./render/pdf/typeset.ts";
+export { renderMarkdown, renderText } from "./render/text/render.ts";
 export { type ResolvedContent, resolveLocale } from "./resolve/locale.ts";
 export { resolveVariant, usedTags, type VariantResolution } from "./resolve/variant.ts";
 export { contentJsonSchema, themeJsonSchema } from "./schema.ts";

@@ -1,11 +1,21 @@
 import { mkdirSync, statSync, writeFileSync } from "node:fs";
 import { basename, dirname, extname, join, resolve } from "node:path";
-import { buildDocx, buildPdf, type Content, type Diagnostic, hasErrors, lint } from "@cvac/core";
+import {
+  buildDocx,
+  buildMarkdown,
+  buildPdf,
+  buildText,
+  type Content,
+  type Diagnostic,
+  hasErrors,
+  lint,
+} from "@cvac/core";
 import { loadBundledFonts } from "@cvac/fonts";
 import { displayName, type Inputs, loadInputs, locate } from "../inputs.ts";
 import { dedupe, formatBytes, type Io, printDiagnostics, summarize } from "../report.ts";
 
-export type Format = "pdf" | "docx";
+export const FORMATS = ["pdf", "docx", "md", "txt"] as const;
+export type Format = (typeof FORMATS)[number];
 
 export interface BuildFlags {
   format?: string;
@@ -25,10 +35,12 @@ export class UsageError extends Error {}
 export function parseFormats(value: string | undefined): Format[] {
   if (!value) return ["pdf"];
   const parts =
-    value === "all" ? ["pdf", "docx"] : value.split(",").map((s) => s.trim().toLowerCase());
+    value === "all" ? [...FORMATS] : value.split(",").map((s) => s.trim().toLowerCase());
   for (const p of parts) {
-    if (p !== "pdf" && p !== "docx")
-      throw new UsageError(`Unknown format '${p}'. Use pdf, docx, pdf,docx or all.`);
+    if (!(FORMATS as readonly string[]).includes(p))
+      throw new UsageError(
+        `Unknown format '${p}'. Use ${FORMATS.join(", ")}, a comma-separated list or all.`,
+      );
   }
   return [...new Set(parts)] as Format[];
 }
@@ -187,9 +199,18 @@ export async function build(cv: string | undefined, flags: BuildFlags): Promise<
     const r =
       t.format === "pdf"
         ? await buildPdf(inputs.content, opts)
-        : await buildDocx(inputs.content, { ...opts, embedFonts: flags.embedFonts ?? true });
+        : t.format === "docx"
+          ? await buildDocx(inputs.content, { ...opts, embedFonts: flags.embedFonts ?? true })
+          : (t.format === "md" ? buildMarkdown : buildText)(inputs.content, opts);
     outcome.diagnostics.push(...r.diagnostics);
-    const bytes = "pdf" in r ? r.pdf : "docx" in r ? r.docx : undefined;
+    const bytes =
+      "pdf" in r
+        ? r.pdf
+        : "docx" in r
+          ? r.docx
+          : "text" in r && r.text !== undefined
+            ? new TextEncoder().encode(r.text)
+            : undefined;
     if (!bytes || hasErrors(r.diagnostics)) {
       failed = true;
       continue;

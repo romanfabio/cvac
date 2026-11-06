@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { expect, type Page, test } from "@playwright/test";
 import { strToU8, unzipSync, zipSync } from "fflate";
-import { cliBuild, hash, open, ROOT } from "./helpers.ts";
+import { cliBuild, downloadAs, hash, open, ROOT } from "./helpers.ts";
 
 const SIDEBAR = join(ROOT, "fixtures/sidebar");
 const file = (name: string) => new Uint8Array(readFileSync(join(SIDEBAR, name)));
@@ -70,10 +70,7 @@ test("exports a project that `cvac build` turns into the same files", async ({ p
     const cli = cliBuild(dir);
     expect(cli.pdf).toBe(webPdf);
 
-    const [docx] = await Promise.all([
-      page.waitForEvent("download"),
-      page.getByRole("button", { name: "Download DOCX" }).click(),
-    ]);
+    const docx = await downloadAs(page, "docx");
     const { createHash } = await import("node:crypto");
     expect(
       createHash("sha256")

@@ -8,8 +8,9 @@ import {
 } from "@cvac/core/editor";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { photoPathFor, readPhoto, removePhoto, setPhoto } from "./cvPhoto.ts";
+import { DownloadMenu } from "./DownloadMenu.tsx";
 import { Editor, type EditorHandle } from "./Editor.tsx";
-import type { BuildRequest, BuildResult } from "./engine.ts";
+import type { BuildRequest, BuildResult, OutputFormat } from "./engine.ts";
 import { CV_FILE, THEME_FILE } from "./files.ts";
 import { Preview } from "./Preview.tsx";
 import { deletePhoto, loadPhotos, replacePhotos, savePhoto } from "./photoStore.ts";
@@ -68,7 +69,7 @@ export function App() {
   }, []);
 
   const request = useCallback(
-    (format: "pdf" | "docx") =>
+    (format: OutputFormat) =>
       new Promise<BuildResult>((resolve) => {
         const id = ++seq.current;
         pending.current.set(id, resolve);
@@ -109,17 +110,11 @@ export function App() {
     save(file, text);
   }, []);
 
-  const download = async (format: "pdf" | "docx") => {
+  const download = async (format: OutputFormat) => {
     const r = format === "pdf" && result?.bytes && pdf ? { bytes: pdf } : await request(format);
     if (!r.bytes) return;
     const parts = ["cv", variant, locale].filter(Boolean).join(".");
-    saveFile(
-      r.bytes,
-      `${parts}.${format}`,
-      format === "pdf"
-        ? "application/pdf"
-        : "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    );
+    saveFile(r.bytes, `${parts}.${format}`, MIME[format]);
   };
 
   const exportZip = () => {
@@ -347,12 +342,10 @@ export function App() {
             Reset
           </button>
           {/* The results last, at the right end of the toolbar. */}
-          <button type="button" onClick={() => download("pdf")} disabled={!pdf || errors > 0}>
-            Download PDF
-          </button>
-          <button type="button" onClick={() => download("docx")} disabled={errors > 0}>
-            Download DOCX
-          </button>
+          <DownloadMenu
+            onDownload={(f) => void download(f)}
+            disabled={(f) => errors > 0 || (f === "pdf" && !pdf)}
+          />
         </div>
       </header>
 
@@ -465,6 +458,13 @@ function Problems({ diags, onPick }: { diags: Diagnostic[]; onPick(d: Diagnostic
     </ul>
   );
 }
+
+const MIME: Record<OutputFormat, string> = {
+  pdf: "application/pdf",
+  docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  md: "text/markdown;charset=utf-8",
+  txt: "text/plain;charset=utf-8",
+};
 
 /** Hand bytes to the browser as a file download. */
 function saveFile(bytes: Uint8Array, name: string, type: string) {

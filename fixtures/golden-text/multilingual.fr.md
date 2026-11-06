@@ -1,0 +1,38 @@
+# Lena Martins
+
+Ingénieure données
+
+[lena.martins@example.com](mailto:lena.martins@example.com) · [+351 210 000 000](tel:+351210000000) · Lisbonne, Portugal
+
+## Profil
+
+Conçoit des chaînes de données fiables et apprend aux équipes à les maîtriser.
+
+## Expérience professionnelle
+
+### Ingénieure données senior
+
+mars 2022 – Aujourd'hui\
+*Nordwind Analytics*
+
+- Traitement nocturne réduit de 6 heures à 40 minutes
+
+### Analyste de données
+
+sept. 2019 – févr. 2022\
+*Café Data Lda.*
+
+## Formation
+
+### Master en informatique
+
+2017 – 2019\
+*Universidade de Lisboa*
+
+## Compétences
+
+**Data**: Spark, Airflow, dbt, PostgreSQL
+
+## Langues
+
+**Portugais** (C2) · **Allemand** (B2)

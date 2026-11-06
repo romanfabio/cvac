@@ -1,0 +1,66 @@
+# Giulia Ferrari
+
+Staff Platform Engineer
+
+[giulia.ferrari@example.com](mailto:giulia.ferrari@example.com) · [+39 333 123 4567](tel:+393331234567) · Torino, Italy · [github.com/gferrari](https://github.com/gferrari) · [www.linkedin.com/in/gferrari](https://www.linkedin.com/in/gferrari)
+
+## Summary
+
+Platform engineer focused on developer experience, reliability and cost-aware cloud architecture.
+
+## Experience
+
+### Staff Platform Engineer
+
+Sep 2021 – Present\
+*Nexa Cloud · Torino*
+
+- Led the migration of 140 services to Kubernetes with zero customer-facing downtime
+- Cut cloud spend by 31% through rightsizing and spot capacity
+- Built the internal developer portal used by 400 engineers
+
+### Senior Backend Engineer
+
+Feb 2017 – Aug 2021\
+*Fintech Labs · Milano*
+
+- Designed the payments ledger handling 5M transactions/day
+- Introduced contract testing across 30 services
+
+### Developer
+
+Jun 2014 – Jan 2017\
+*Studio Web*
+
+- Delivered 20+ client projects in TypeScript and Python
+
+## Education
+
+### MSc Computer Engineering
+
+2012 – 2014\
+*Politecnico di Torino*
+
+## Skills
+
+**Platform**: Kubernetes, Terraform, Argo CD, Helm
+
+**Languages**: Go, TypeScript, Python
+
+**Cloud**: AWS, Azure, GCP
+
+## Languages
+
+**Italian** (Native) · **English** (C1)
+
+## Certifications
+
+### CKA
+
+Mar 2022\
+*CNCF*
+
+### AWS Solutions Architect Professional
+
+Nov 2020\
+*AWS*

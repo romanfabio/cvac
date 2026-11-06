@@ -3,7 +3,7 @@
 [![CI](https://github.com/romanfabio/cvac/actions/workflows/ci.yml/badge.svg)](https://github.com/romanfabio/cvac/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** output.
+Write your CV as code and get deterministic, ATS-friendly **PDF** and **DOCX** output, plus **Markdown** and **plain text** versions of the same CV.
 
 **[Try the web editor](https://romanfabio.github.io/cvac/)**: it runs entirely in your browser, and nothing is uploaded.
 
@@ -62,7 +62,8 @@ Then create your CV in a folder of its own:
 mkdir ~/my-cv && cd ~/my-cv
 cvac init                                # starter cv.yaml, theme.yaml and editor schemas
 cvac build                               # -> cv.pdf
-cvac build --format all --lang en,it     # -> cv.en.pdf, cv.en.docx, cv.it.pdf, cv.it.docx
+cvac build --format pdf,docx --lang en,it  # -> cv.en.pdf, cv.en.docx, cv.it.pdf, cv.it.docx
+cvac build --format md,txt               # -> cv.md, cv.txt
 cvac watch                               # rebuild on every save
 ```
 
@@ -312,6 +313,12 @@ A test checks that every piece of text can be read back from both formats, in or
 
 The same files give the same SHA-256 in Node and in the browser. The test suite compares output against the hashes in [`fixtures/golden-pdf.json`](fixtures/golden-pdf.json) and [`fixtures/golden-docx.json`](fixtures/golden-docx.json), and the [CI workflow](.github/workflows/ci.yml) runs them on Linux, Windows and macOS.
 
+**Markdown and plain text:**
+- **Same text, same order:** like the DOCX, they have one column in CV order, with the same labels, dates and heading case as the other formats (a theme with capitalized headings gives capitalized headings here too). The photo is left out.
+- **Markdown** (`.md`): the name is a `#` title, sections are `##` headings and entries `###` headings, with highlights as a list and links kept. Characters that Markdown would read as formatting are escaped. Use it for a README, a personal site or a git repository.
+- **Plain text** (`.txt`): headings are underlined with `-` and highlights start with `- `. A link appears as its address when the text does not already show it. Use it for application forms that only take pasted text.
+- Both are UTF-8 with `\n` line endings, with no line wrapping. Their expected output is kept as readable files in [`fixtures/golden-text/`](fixtures/golden-text).
+
 ## CLI reference
 
 | Command | What it does |
@@ -328,7 +335,7 @@ The same files give the same SHA-256 in Node and in the browser. The test suite 
 
 | Option | Meaning |
 | --- | --- |
-| `-f, --format <formats>` | `pdf` (default), `docx`, `pdf,docx` or `all` |
+| `-f, --format <formats>` | `pdf` (default), `docx`, `md`, `txt`, a comma-separated list such as `pdf,docx`, or `all` |
 | `-l, --lang <locales>` | Language or languages, e.g. `it` or `en,it` (default: `meta.defaultLocale`) |
 | `-v, --variant <names>` | Variants or tags, e.g. `backend,lead`, or `all` |
 | `-t, --theme <file>` | Theme file (default: `theme.yaml` next to the CV, if there is one) |
@@ -356,7 +363,7 @@ The editor rebuilds your CV in a Web Worker as you type, with the same core code
 The built page carries a Content-Security-Policy that lets it fetch only its own files, so the browser itself blocks any attempt to send data elsewhere. Static hosts such as GitHub Pages cannot set headers, so the policy is a `<meta>` tag, which does not reach the build worker; a host that can set headers should send the same policy (in [`apps/web/vite.config.ts`](apps/web/vite.config.ts)) for every file.
 
 - `cv.yaml` and `theme.yaml` each have a tab, with schema-based completion. cvac's diagnostics appear inline and in a problems list; clicking one jumps to the line.
-- The toolbar picks the built-in theme (it rewrites `extends:` in `theme.yaml`, so your other settings stay), the language and the variant, and downloads the PDF or DOCX.
+- The toolbar picks the built-in theme (it rewrites `extends:` in `theme.yaml`, so your other settings stay), the language and the variant. **Download PDF** saves the PDF; the arrow next to it opens a menu with every format: PDF, Word (.docx), Markdown (.md) and plain text (.txt).
 - **Add photo** takes a JPEG or PNG from your computer. If the CV has no `basics.photo` yet, it adds `photo: photo.jpg` (or `photo.png`) to `cv.yaml` for you, so Export and the CLI find the same file. **Change photo** replaces the image, and **Remove photo** takes the line out of `cv.yaml` and deletes the image from the browser.
 - The status bar shows the page count, build time and the PDF's SHA-256. It matches `cvac build` for the same files.
 - **Export** downloads `cv-project.zip`: `cv.yaml`, `theme.yaml`, the photo at the path `basics.photo` gives, and the editor schemas in `.cvac/schemas/`, the same layout `cvac init` creates. `cvac build` works on the unzipped folder. **Import** opens such a zip, or any zipped folder with a `cv.yaml`, and replaces the editor's files and photo after asking. Browsers can clear their storage, so export to keep a copy of your work or to move it to another device.
@@ -378,13 +385,14 @@ The built page carries a Content-Security-Policy that lets it fetch only its own
 ```text
 cv.yaml ─parse─► content ─variant─► locale ─┐
                                             ├─► layout (semantic order) ─┬─► PDF  (typesetting + pdfkit)
-theme.yaml ─parse─► theme ─extends/merge────┘                            └─► DOCX (native Word, one column)
+theme.yaml ─parse─► theme ─extends/merge────┘                            ├─► DOCX (native Word, one column)
+                                                                         └─► Markdown, plain text (one column)
                             lint ◄── content, theme, page count
 ```
 
 | Package | Contents |
 | --- | --- |
-| [`@cvac/core`](packages/core) | Model, YAML parsing with located diagnostics, JSON Schemas, variants, languages, themes, layout, the PDF and DOCX renderers, and the linter. It runs unchanged in Node and in browsers, and reads no files |
+| [`@cvac/core`](packages/core) | Model, YAML parsing with located diagnostics, JSON Schemas, variants, languages, themes, layout, the PDF, DOCX, Markdown and text renderers, and the linter. It runs unchanged in Node and in browsers, and reads no files |
 | [`@cvac/fonts`](packages/fonts) | The bundled fonts (Source Sans 3, Source Serif 4) and a Node loader |
 | [`@cvac/cli`](packages/cli) | The `cvac` command line |
 | [`apps/web`](apps/web) | The web editor (Vite, React, CodeMirror, pdf.js) |

@@ -2,7 +2,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
   buildDocx,
+  buildMarkdown,
   buildPdf,
+  buildText,
   parseContent,
   parseTheme,
   STARTER_CV,
@@ -35,6 +37,12 @@ describe("web build engine", () => {
 
     const docx = await runBuild(req({ format: "docx", locale: "it" }), fonts);
     expect(docx.bytes).toEqual((await buildDocx(cv, { fonts, theme, locale: "it" })).docx);
+
+    const utf8 = (s: string | undefined) => new TextEncoder().encode(s ?? "");
+    const md = await runBuild(req({ format: "md", locale: "it" }), fonts);
+    expect(md.bytes).toEqual(utf8(buildMarkdown(cv, { theme, locale: "it" }).text));
+    const txt = await runBuild(req({ format: "txt" }), fonts);
+    expect(txt.bytes).toEqual(utf8(buildText(cv, { theme }).text));
   });
 
   it("reports what the toolbar needs", async () => {

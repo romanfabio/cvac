@@ -7,6 +7,7 @@ import type { Content } from "./model/content.ts";
 import type { Theme } from "./model/theme.ts";
 import { renderDocx } from "./render/docx/render.ts";
 import { renderPdf } from "./render/pdf/render.ts";
+import { renderMarkdown, renderText } from "./render/text/render.ts";
 import { resolveLocale } from "./resolve/locale.ts";
 import { mapDiagnostics, resolveVariant } from "./resolve/variant.ts";
 import { resolveTheme } from "./theme/resolve.ts";
@@ -118,6 +119,29 @@ export interface BuildDocxOptions extends LayoutOptions {
 export interface BuildDocxResult {
   docx?: Uint8Array;
   diagnostics: Diagnostic[];
+}
+
+export interface BuildTextResult {
+  /** The document, `\n` line endings, ending in one newline. */
+  text?: string;
+  diagnostics: Diagnostic[];
+}
+
+/**
+ * Parsed content -> Markdown. Like the DOCX, one column in CV order; the
+ * theme still sets heading case and date format. The photo is left out.
+ */
+export function buildMarkdown(content: Content, opts: LayoutOptions = {}): BuildTextResult {
+  const l = layout(content, { ...opts, linear: true });
+  if (!l.layout) return { diagnostics: l.diagnostics };
+  return { text: renderMarkdown(l.layout), diagnostics: l.diagnostics };
+}
+
+/** Parsed content -> plain text, one column in CV order (see `buildMarkdown`). */
+export function buildText(content: Content, opts: LayoutOptions = {}): BuildTextResult {
+  const l = layout(content, { ...opts, linear: true });
+  if (!l.layout) return { diagnostics: l.diagnostics };
+  return { text: renderText(l.layout), diagnostics: l.diagnostics };
 }
 
 /**

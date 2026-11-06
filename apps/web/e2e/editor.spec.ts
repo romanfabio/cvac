@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { cliHashes, hash, open, sha256 } from "./helpers.ts";
+import { cliHashes, downloadAs, type Hashes, hash, open, sha256 } from "./helpers.ts";
 
-let expected: { pdf: string; docx: string };
+let expected: Hashes;
 test.beforeAll(() => {
   expected = cliHashes();
 });
@@ -32,10 +32,7 @@ test("a built-in serif theme gives the CLI's bytes, loading its font on demand",
   expect(fonts.length).toBeGreaterThan(0);
   expect(fonts.every((f) => f.startsWith("SourceSerif4"))).toBe(true);
 
-  const [download] = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByRole("button", { name: "Download DOCX" }).click(),
-  ]);
+  const download = await downloadAs(page, "docx");
   expect(sha256(readFileSync(await download.path()))).toBe(cli.docx);
 });
 
@@ -67,12 +64,41 @@ test("the default theme loads only the sans-serif font", async ({ page }) => {
 
 test("downloads a DOCX with the same bytes as the CLI", async ({ page }) => {
   await open(page);
-  const [download] = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByRole("button", { name: "Download DOCX" }).click(),
-  ]);
+  const download = await downloadAs(page, "docx");
   expect(download.suggestedFilename()).toBe("cv.docx");
   expect(sha256(readFileSync(await download.path()))).toBe(expected.docx);
+});
+
+test("downloads Markdown and plain text with the same bytes as the CLI", async ({ page }) => {
+  await open(page);
+  const md = await downloadAs(page, "md");
+  expect(md.suggestedFilename()).toBe("cv.md");
+  expect(sha256(readFileSync(await md.path()))).toBe(expected.md);
+  const txt = await downloadAs(page, "txt");
+  expect(txt.suggestedFilename()).toBe("cv.txt");
+  expect(sha256(readFileSync(await txt.path()))).toBe(expected.txt);
+  const pdf = await downloadAs(page, "pdf");
+  expect(sha256(readFileSync(await pdf.path()))).toBe(expected.pdf);
+});
+
+test("the download menu works from the keyboard", async ({ page }) => {
+  await open(page);
+  const toggle = page.getByRole("button", { name: "More download formats" });
+  await toggle.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByRole("menuitem", { name: /^PDF/ })).toBeFocused();
+  await page.keyboard.press("ArrowDown");
+  await expect(page.getByRole("menuitem", { name: /^Word/ })).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(page.getByRole("menuitem", { name: /^Plain text/ })).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await expect(toggle).toBeFocused();
+
+  await toggle.click();
+  await page.locator(".status").click();
+  await expect(page.getByRole("menu")).toHaveCount(0);
 });
 
 test("reports an error while editing and recovers on undo", async ({ page }) => {
@@ -90,6 +116,11 @@ test("reports an error while editing and recovers on undo", async ({ page }) => 
   // The preview keeps the last good build.
   await expect(hash(page)).toHaveAttribute("data-sha256", expected.pdf);
   await expect(page.getByRole("button", { name: "Download PDF" })).toBeDisabled();
+  await page.getByRole("button", { name: "More download formats" }).click();
+  await expect(page.getByRole("menuitem", { name: /^Markdown/ })).toBeDisabled();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("menu")).toHaveCount(0);
+  await editor.focus();
 
   await page.keyboard.press("ControlOrMeta+z");
   await expect(page.locator(".problems")).toHaveText("No problems");
@@ -136,8 +167,13 @@ test("fits a phone screen without horizontal scrolling", async ({ page }, info) 
   expect(canvas.width).toBeGreaterThan(viewport.width * 0.8);
   expect(canvas.x + canvas.width).toBeLessThanOrEqual(viewport.width);
   await expect(page.locator(".editor .cm-content")).toBeVisible();
-  for (const name of ["Download PDF", "Download DOCX"]) {
+  for (const name of ["Download PDF", "More download formats"]) {
     const b = await page.getByRole("button", { name }).boundingBox();
     expect(b && b.x + b.width).toBeLessThanOrEqual(viewport.width);
   }
+  // The open menu fits on the screen too.
+  await page.getByRole("button", { name: "More download formats" }).click();
+  const menu = await page.getByRole("menu").boundingBox();
+  expect(menu && menu.x).toBeGreaterThanOrEqual(0);
+  expect(menu && menu.x + menu.width).toBeLessThanOrEqual(viewport.width);
 });

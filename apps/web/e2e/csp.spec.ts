@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { open } from "./helpers.ts";
+import { downloadAs, open } from "./helpers.ts";
 
 test.beforeEach(async ({ page }) => {
   // Record every CSP violation from the first script on.
@@ -37,10 +37,7 @@ test("normal use triggers no CSP violations", async ({ page }) => {
   await open(page);
   await page.getByLabel("Theme").selectOption("classic");
   await expect(page.locator(".status")).toContainText("Up to date");
-  const [download] = await Promise.all([
-    page.waitForEvent("download"),
-    page.getByRole("button", { name: "Download DOCX" }).click(),
-  ]);
+  const download = await downloadAs(page, "docx");
   expect(download.suggestedFilename()).toBe("cv.docx");
   expect(await violations(page)).toEqual([]);
 });

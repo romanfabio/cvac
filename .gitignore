@@ -13,6 +13,8 @@ blob-report/
 # CVs built from the fixtures (`npm run cvac -- build fixtures/...` writes next to the CV)
 fixtures/**/*.pdf
 fixtures/**/*.docx
+fixtures/*/cv*.md
+fixtures/*/cv*.txt
 
 # Logs and local environment
 *.log

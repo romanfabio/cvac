@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { expect, type Page } from "@playwright/test";
+import { type Download, expect, type Page } from "@playwright/test";
 
 export const ROOT = resolve(import.meta.dirname, "../../..");
 export const sha256 = (bytes: Buffer | Uint8Array) =>
@@ -17,8 +17,16 @@ export interface CliInputs {
   files?: Record<string, Uint8Array>;
 }
 
+/** SHA-256 of each output format. */
+export type Hashes = Record<"pdf" | "docx" | "md" | "txt", string>;
+
+const hashesIn = (dir: string): Hashes => {
+  const h = (ext: string) => sha256(readFileSync(join(dir, `cv.${ext}`)));
+  return { pdf: h("pdf"), docx: h("docx"), md: h("md"), txt: h("txt") };
+};
+
 /** Build the starter CV with the real CLI (from sources), to compare hashes. */
-export function cliHashes(inputs: CliInputs = {}): { pdf: string; docx: string } {
+export function cliHashes(inputs: CliInputs = {}): Hashes {
   const dir = mkdtempSync(join(tmpdir(), "cvac-e2e-"));
   try {
     const cli = (...args: string[]) =>
@@ -40,17 +48,14 @@ export function cliHashes(inputs: CliInputs = {}): { pdf: string; docx: string }
       writeFileSync(join(dir, name), data);
     }
     cli("build", "cv.yaml", "--format", "all", "--out", "out");
-    return {
-      pdf: sha256(readFileSync(join(dir, "out/cv.pdf"))),
-      docx: sha256(readFileSync(join(dir, "out/cv.docx"))),
-    };
+    return hashesIn(join(dir, "out"));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 }
 
 /** Build `dir/cv.yaml` (with `dir/theme.yaml`, if any) with the CLI; hashes of the outputs. */
-export function cliBuild(dir: string): { pdf: string; docx: string } {
+export function cliBuild(dir: string): Hashes {
   const out = mkdtempSync(join(tmpdir(), "cvac-e2e-out-"));
   try {
     execFileSync(
@@ -67,10 +72,7 @@ export function cliBuild(dir: string): { pdf: string; docx: string } {
       ],
       { stdio: "pipe" },
     );
-    return {
-      pdf: sha256(readFileSync(join(out, "cv.pdf"))),
-      docx: sha256(readFileSync(join(out, "cv.docx"))),
-    };
+    return hashesIn(out);
   } finally {
     rmSync(out, { recursive: true, force: true });
   }
@@ -81,6 +83,19 @@ export async function open(page: Page) {
   await page.goto("./");
   await expect(page.locator(".status")).toContainText("Up to date");
   await expect(page.locator(".preview canvas.page").first()).toBeVisible();
+}
+
+/** The menu entry of each format, as the download menu labels it. */
+const MENU_LABEL = { pdf: /^PDF/, docx: /^Word/, md: /^Markdown/, txt: /^Plain text/ };
+
+/** Download a format through the menu on the download button's arrow. */
+export async function downloadAs(page: Page, format: keyof typeof MENU_LABEL): Promise<Download> {
+  await page.getByRole("button", { name: "More download formats" }).click();
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("menuitem", { name: MENU_LABEL[format] }).click(),
+  ]);
+  return download;
 }
 
 export const hash = (page: Page) => page.locator(".status .hash");

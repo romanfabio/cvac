@@ -98,7 +98,9 @@ describe("cvac build", () => {
   it("builds every format x language combination, byte-identically", async () => {
     const r = await run("build", "--format", "all", "--lang", "en,it");
     expect(r.code, r.text()).toBe(0);
-    const files = ["cv.en.pdf", "cv.en.docx", "cv.it.pdf", "cv.it.docx"];
+    const files = ["en", "it"].flatMap((l) =>
+      ["pdf", "docx", "md", "txt"].map((f) => `cv.${l}.${f}`),
+    );
     for (const f of files) expect(existsSync(f), f).toBe(true);
     const before = files.map(sha);
     expect((await run("build", "-f", "all", "-l", "en,it")).code).toBe(0);
@@ -124,6 +126,17 @@ describe("cvac build", () => {
     expect(readFileSync("small.docx").length).toBeLessThan(
       readFileSync("embedded.docx").length / 10,
     );
+  });
+
+  it("builds Markdown and plain text", async () => {
+    const r = await run("build", "-f", "md,txt", "--lang", "it");
+    expect(r.code, r.text()).toBe(0);
+    const md = readFileSync("cv.it.md", "utf8");
+    expect(md).toMatch(/^# .+\n/);
+    expect(md).toContain("\n## Esperienza\n");
+    const txt = readFileSync("cv.it.txt", "utf8");
+    expect(txt).toContain("\nEsperienza\n----------\n");
+    expect(md.endsWith("\n") && !md.includes("\r")).toBe(true);
   });
 
   it("writes into a directory when -o names one or there are several outputs", async () => {
@@ -213,7 +226,9 @@ describe("cvac watch", () => {
 describe("option parsing", () => {
   it("parses formats, languages and dates", () => {
     expect(parseFormats(undefined)).toEqual(["pdf"]);
-    expect(parseFormats("all")).toEqual(["pdf", "docx"]);
+    expect(parseFormats("all")).toEqual(["pdf", "docx", "md", "txt"]);
+    expect(parseFormats("md,TXT")).toEqual(["md", "txt"]);
+    expect(() => parseFormats("html")).toThrow(/Unknown format 'html'/);
     expect(parseFormats("DOCX, pdf,docx")).toEqual(["docx", "pdf"]);
     expect(parseLangs("en, it,en")).toEqual(["en", "it"]);
     expect(parseDate("2024-02-29")?.toISOString()).toBe("2024-02-29T00:00:00.000Z");

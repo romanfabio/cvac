@@ -1,6 +1,8 @@
 import {
   buildDocx,
+  buildMarkdown,
   buildPdf,
+  buildText,
   type Diagnostic,
   type FontSet,
   hasErrors,
@@ -17,10 +19,13 @@ import { CV_FILE, THEME_FILE } from "./files.ts";
 
 export { CV_FILE, THEME_FILE };
 
+/** Output formats, as `cvac build --format` names them. */
+export type OutputFormat = "pdf" | "docx" | "md" | "txt";
+
 export interface BuildRequest {
   /** Increasing id: the UI ignores results of superseded requests. */
   id: number;
-  format: "pdf" | "docx";
+  format: OutputFormat;
   cv: string;
   /** theme.yaml text; empty means the built-in default theme. */
   theme: string;
@@ -33,7 +38,7 @@ export interface BuildRequest {
 
 export interface BuildResult {
   id: number;
-  format: "pdf" | "docx";
+  format: OutputFormat;
   /** Present only when there are no errors. */
   bytes?: Uint8Array;
   pages?: number;
@@ -102,10 +107,15 @@ export async function runBuild(
       bytes = r.pdf;
       if (r.pages) result.pages = r.pages;
       diagnostics.push(...lint(content, { ...opts, ...(r.pages ? { pages: r.pages } : {}) }));
-    } else {
+    } else if (req.format === "docx") {
       const r = await buildDocx(content, { ...opts, embedFonts: req.embedFonts ?? true });
       diagnostics.push(...r.diagnostics);
       bytes = r.docx;
+    } else {
+      // UTF-8 without a BOM, exactly the bytes `cvac build` writes.
+      const r = (req.format === "md" ? buildMarkdown : buildText)(content, opts);
+      diagnostics.push(...r.diagnostics);
+      if (r.text !== undefined) bytes = new TextEncoder().encode(r.text);
     }
     if (bytes && !hasErrors(diagnostics)) result.bytes = bytes;
   }

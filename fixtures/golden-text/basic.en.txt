@@ -1,0 +1,48 @@
+Jane Doe
+Senior Software Engineer
+jane.doe@example.com · +39 333 000 0000 · Milano, Italy · github.com/janedoe
+
+Summary
+-------
+
+Backend engineer with 10 years of experience building distributed systems.
+
+Experience
+----------
+
+Senior Developer
+Mar 2021 – Present
+Acme Corp
+- Designed an event-driven billing platform processing 2M events/day
+- Led a team of 5 engineers
+
+Developer
+2016 – Feb 2021
+Globex
+- Migrated a monolith to services
+
+Education
+---------
+
+MSc Computer Engineering
+2011 – 2016
+Politecnico di Milano
+
+Skills
+------
+
+Languages: TypeScript, C#, Go
+
+Cloud: Azure, Kubernetes
+
+Languages
+---------
+
+Italian (Native) · English (C1)
+
+Volunteering
+------------
+
+CoderDojo Milano
+2019
+Mentor

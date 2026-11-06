@@ -1,0 +1,148 @@
+# Alessandra Bianchi-Fontana
+
+Principal Engineer
+
+[alessandra@example.com](mailto:alessandra@example.com) · [alessandra.example.com/a/really/long/path/that/must/wrap/somewhere/because/it-is-long](https://alessandra.example.com/a/really/long/path/that/must/wrap/somewhere/because/it-is-long)
+
+## Summary
+
+Engineer with two decades of experience across distributed systems, developer tooling and platform engineering. Equally comfortable in architecture reviews and in production incidents.
+
+Looking for principal roles with a strong mentoring component.
+
+## Experience
+
+### Staff Engineer
+
+Jan 2023 – Present\
+*Initech · Milano*
+
+Owned the platform team's roadmap and on-call quality for Initech. Worked closely with product and security to ship features with measurable reliability improvements.
+
+- Delivered initiative 1 at Initech: reduced p99 latency by 10% across 3 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 2 at Initech: reduced p99 latency by 17% across 4 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 3 at Initech: reduced p99 latency by 24% across 5 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 4 at Initech: reduced p99 latency by 31% across 6 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+
+### Senior Engineer
+
+Feb 2021 – Feb 2023\
+*Umbrella Systems · Remote*
+
+Owned the platform team's roadmap and on-call quality for Umbrella Systems. Worked closely with product and security to ship features with measurable reliability improvements.
+
+- Delivered initiative 1 at Umbrella Systems: reduced p99 latency by 10% across 3 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 2 at Umbrella Systems: reduced p99 latency by 17% across 4 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 3 at Umbrella Systems: reduced p99 latency by 24% across 5 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 4 at Umbrella Systems: reduced p99 latency by 31% across 6 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+
+### Staff Engineer
+
+Mar 2019 – Mar 2021\
+*Hooli · Remote*
+
+Owned the platform team's roadmap and on-call quality for Hooli. Worked closely with product and security to ship features with measurable reliability improvements.
+
+- Delivered initiative 1 at Hooli: reduced p99 latency by 10% across 3 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 2 at Hooli: reduced p99 latency by 17% across 4 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 3 at Hooli: reduced p99 latency by 24% across 5 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 4 at Hooli: reduced p99 latency by 31% across 6 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+
+### Senior Engineer
+
+Apr 2017 – Apr 2019\
+*Stark Industries · Milano*
+
+Owned the platform team's roadmap and on-call quality for Stark Industries. Worked closely with product and security to ship features with measurable reliability improvements.
+
+- Delivered initiative 1 at Stark Industries: reduced p99 latency by 10% across 3 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 2 at Stark Industries: reduced p99 latency by 17% across 4 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 3 at Stark Industries: reduced p99 latency by 24% across 5 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 4 at Stark Industries: reduced p99 latency by 31% across 6 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+
+### Staff Engineer
+
+May 2015 – May 2017\
+*Wayne Enterprises · Remote*
+
+Owned the platform team's roadmap and on-call quality for Wayne Enterprises. Worked closely with product and security to ship features with measurable reliability improvements.
+
+- Delivered initiative 1 at Wayne Enterprises: reduced p99 latency by 10% across 3 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 2 at Wayne Enterprises: reduced p99 latency by 17% across 4 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 3 at Wayne Enterprises: reduced p99 latency by 24% across 5 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 4 at Wayne Enterprises: reduced p99 latency by 31% across 6 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+
+### Senior Engineer
+
+Jun 2013 – Jun 2015\
+*Cyberdyne · Remote*
+
+Owned the platform team's roadmap and on-call quality for Cyberdyne. Worked closely with product and security to ship features with measurable reliability improvements.
+
+- Delivered initiative 1 at Cyberdyne: reduced p99 latency by 10% across 3 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 2 at Cyberdyne: reduced p99 latency by 17% across 4 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 3 at Cyberdyne: reduced p99 latency by 24% across 5 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 4 at Cyberdyne: reduced p99 latency by 31% across 6 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+
+### Staff Engineer
+
+Jul 2011 – Jul 2013\
+*Soylent · Milano*
+
+Owned the platform team's roadmap and on-call quality for Soylent. Worked closely with product and security to ship features with measurable reliability improvements.
+
+- Delivered initiative 1 at Soylent: reduced p99 latency by 10% across 3 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 2 at Soylent: reduced p99 latency by 17% across 4 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 3 at Soylent: reduced p99 latency by 24% across 5 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 4 at Soylent: reduced p99 latency by 31% across 6 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+
+### Senior Engineer
+
+Aug 2009 – Aug 2011\
+*Tyrell Corp · Remote*
+
+Owned the platform team's roadmap and on-call quality for Tyrell Corp. Worked closely with product and security to ship features with measurable reliability improvements.
+
+- Delivered initiative 1 at Tyrell Corp: reduced p99 latency by 10% across 3 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 2 at Tyrell Corp: reduced p99 latency by 17% across 4 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 3 at Tyrell Corp: reduced p99 latency by 24% across 5 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 4 at Tyrell Corp: reduced p99 latency by 31% across 6 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+
+### Staff Engineer
+
+Sep 2007 – Sep 2009\
+*Wonka Industries · Remote*
+
+Owned the platform team's roadmap and on-call quality for Wonka Industries. Worked closely with product and security to ship features with measurable reliability improvements.
+
+- Delivered initiative 1 at Wonka Industries: reduced p99 latency by 10% across 3 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 2 at Wonka Industries: reduced p99 latency by 17% across 4 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 3 at Wonka Industries: reduced p99 latency by 24% across 5 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 4 at Wonka Industries: reduced p99 latency by 31% across 6 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+
+### Senior Engineer
+
+Jan 2005 – Jan 2007\
+*Aperture Labs · Milano*
+
+Owned the platform team's roadmap and on-call quality for Aperture Labs. Worked closely with product and security to ship features with measurable reliability improvements.
+
+- Delivered initiative 1 at Aperture Labs: reduced p99 latency by 10% across 3 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 2 at Aperture Labs: reduced p99 latency by 17% across 4 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 3 at Aperture Labs: reduced p99 latency by 24% across 5 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+- Delivered initiative 4 at Aperture Labs: reduced p99 latency by 31% across 6 services by redesigning caching, batching writes and introducing back-pressure in the ingestion pipeline
+
+## Projects
+
+### [cvac](https://github.com/example/cvac)
+
+CV as Code, deterministic CV generation.
+
+TypeScript, PDF, DOCX
+
+## Certifications
+
+### Azure Solutions Architect Expert
+
+May 2023\
+*Microsoft*
